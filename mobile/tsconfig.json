@@ -1,0 +1,12 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true,
+    "baseUrl": "./src"
+  },
+  "include": ["src", "app"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,21 @@
+# Node
+node_modules/
+dist/
+*.log
+
+# Expo / React Native
+.expo/
+.expo-shared/
+*.expo*
+
+# macOS / Xcode / Android
+.DS_Store
+*.iml
+.idea/
+.gradle/
+/android/app/build/
+/ios/build/
+
+# Environment
+backend/.env
+backend/storynest.db
