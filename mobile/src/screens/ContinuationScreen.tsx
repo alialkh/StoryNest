@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text, TextInput } from 'react-native-paper';
 import { useStoryStore } from '../store/storyStore';
 import type { Story } from '../types';
+import { EnchantedBackground } from '../components/EnchantedBackground';
 
 interface Props {
   story: Story;
@@ -27,63 +28,102 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Button icon="arrow-left" onPress={onBack} style={styles.back}>
-        Back
-      </Button>
-      <Text variant="headlineSmall" style={styles.title}>
-        Continue story
-      </Text>
-      <Text variant="bodyMedium" style={styles.original}>
-        {story.content}
-      </Text>
-      <TextInput
-        label="Direction for the next part"
-        value={prompt}
-        onChangeText={setPrompt}
-        mode="outlined"
-        multiline
-        style={styles.input}
-        placeholder="Introduce a new twist with an unexpected ally"
-      />
-      {message ? <Text style={styles.message}>{message}</Text> : null}
-      <View style={styles.footer}>
-        <Text variant="labelSmall">
-          {remaining === null
-            ? 'Unlimited continuations available.'
-            : `${remaining ?? 3} stories remaining today.`}
-        </Text>
-        <Button mode="contained" onPress={handleContinue} loading={loading}>
-          Generate continuation
-        </Button>
-      </View>
-    </ScrollView>
+    <EnchantedBackground>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Button icon="arrow-left" onPress={onBack} mode="contained-tonal" style={styles.back}>
+            Back
+          </Button>
+          <View>
+            <Text variant="headlineSmall" style={styles.title}>
+              Continue the tale
+            </Text>
+            <Text variant="bodySmall" style={styles.subtitle}>
+              Add a prompt or let StoryNest improvise the next chapter.
+            </Text>
+          </View>
+        </View>
+        <View style={styles.originalCard}>
+          <Text variant="labelSmall" style={styles.originalLabel}>
+            Previous chapter
+          </Text>
+          <Text variant="bodyMedium" style={styles.original}>
+            {story.content}
+          </Text>
+        </View>
+        <TextInput
+          label="Direction for the next part"
+          value={prompt}
+          onChangeText={setPrompt}
+          mode="outlined"
+          multiline
+          style={styles.input}
+          placeholder="Introduce a new twist with an unexpected ally"
+        />
+        {message ? <Text style={styles.message}>{message}</Text> : null}
+        <View style={styles.footer}>
+          <Text variant="labelSmall" style={styles.reminder}>
+            {remaining === null
+              ? 'Unlimited continuations available.'
+              : `${remaining ?? 3} stories remaining today.`}
+          </Text>
+          <Button mode="contained" onPress={handleContinue} loading={loading} icon="sparkles">
+            Generate continuation
+          </Button>
+        </View>
+      </ScrollView>
+    </EnchantedBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    gap: 16
+    paddingBottom: 40,
+    paddingTop: 32,
+    gap: 20
+  },
+  header: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center'
   },
   back: {
     alignSelf: 'flex-start'
   },
   title: {
-    marginBottom: 8
+    color: '#312E81'
+  },
+  subtitle: {
+    color: '#433C68'
+  },
+  originalCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    borderRadius: 24,
+    padding: 20,
+    gap: 8,
+    shadowColor: '#1F2937',
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3
+  },
+  originalLabel: {
+    color: '#5B21B6'
   },
   original: {
-    backgroundColor: '#EEF2FF',
-    padding: 16,
-    borderRadius: 8
+    color: '#312E81',
+    lineHeight: 20
   },
   input: {
-    backgroundColor: 'white'
+    backgroundColor: 'rgba(255, 255, 255, 0.98)'
   },
   footer: {
     gap: 12
   },
   message: {
     color: '#10B981'
+  },
+  reminder: {
+    color: '#433C68'
   }
 });
