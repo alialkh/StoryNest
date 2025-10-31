@@ -8,7 +8,10 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "eslint \"src/**/*.{ts,tsx}\""
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "test": "npm run test:build && npm run test:run",
+    "test:build": "node -e \"require('fs').rmSync('dist-tests', { recursive: true, force: true });\" && tsc --project tsconfig.test.json",
+    "test:run": "node --test \"dist-tests/tests/**/*.test.js\""
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

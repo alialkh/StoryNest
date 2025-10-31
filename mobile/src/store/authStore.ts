@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import create from 'zustand';
-import { api, setAuthToken } from '../services/api';
+import type { AxiosInstance } from 'axios';
 import type { AuthUser } from '../types';
 
 interface AuthState {
@@ -14,39 +14,81 @@ interface AuthState {
   logout: () => Promise<void>;
 }
 
+type AuthStoreDependencies = {
+  storage: typeof AsyncStorage;
+  api: AxiosInstance;
+  setAuthToken: (token: string | null) => void;
+};
+
+const dependencies: Partial<AuthStoreDependencies> & { storage: typeof AsyncStorage } = {
+  storage: AsyncStorage
+};
+
+const ensureApiDependencies = () => {
+  if (!dependencies.api || !dependencies.setAuthToken) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const apiModule = require('../services/api') as AuthStoreDependencies;
+    dependencies.api = apiModule.api;
+    dependencies.setAuthToken = apiModule.setAuthToken;
+  }
+};
+
+export { type AuthStoreDependencies };
+
+export const setAuthStoreDependencies = (overrides: Partial<AuthStoreDependencies>) => {
+  if (overrides.storage) {
+    dependencies.storage = overrides.storage;
+  }
+  if (overrides.api) {
+    dependencies.api = overrides.api;
+  }
+  if (overrides.setAuthToken) {
+    dependencies.setAuthToken = overrides.setAuthToken;
+  }
+};
+
+export const resetAuthStoreDependencies = () => {
+  dependencies.storage = AsyncStorage;
+  delete dependencies.api;
+  delete dependencies.setAuthToken;
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
   loading: false,
   error: null,
   initialise: async () => {
-    const storedToken = await AsyncStorage.getItem('storynest:token');
+    const storage = dependencies.storage;
+    const storedToken = await storage.getItem('storynest:token');
     if (storedToken) {
-      setAuthToken(storedToken);
+      ensureApiDependencies();
+      dependencies.setAuthToken?.(storedToken);
       try {
-        const response = await api.get('/auth/me');
+        const response = await dependencies.api!.get('/auth/me');
         const user = response.data.user as AuthUser;
         set({ token: storedToken, user });
-        await AsyncStorage.setItem('storynest:user', JSON.stringify(user));
+        await storage.setItem('storynest:user', JSON.stringify(user));
         return;
       } catch (error) {
         console.error(error);
       }
     }
-    const storedUser = await AsyncStorage.getItem('storynest:user');
+    const storedUser = await storage.getItem('storynest:user');
     set({
       token: storedToken,
       user: storedUser ? (JSON.parse(storedUser) as AuthUser) : null
     });
   },
   login: async (email, password) => {
+    ensureApiDependencies();
     set({ loading: true, error: null });
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await dependencies.api!.post('/auth/login', { email, password });
       const { user, token } = response.data;
-      await AsyncStorage.setItem('storynest:token', token);
-      await AsyncStorage.setItem('storynest:user', JSON.stringify(user));
-      setAuthToken(token);
+      await dependencies.storage.setItem('storynest:token', token);
+      await dependencies.storage.setItem('storynest:user', JSON.stringify(user));
+      dependencies.setAuthToken?.(token);
       set({ user, token, loading: false });
     } catch (error) {
       console.error(error);
@@ -54,13 +96,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
   register: async (email, password) => {
+    ensureApiDependencies();
     set({ loading: true, error: null });
     try {
-      const response = await api.post('/auth/register', { email, password });
+      const response = await dependencies.api!.post('/auth/register', { email, password });
       const { user, token } = response.data;
-      await AsyncStorage.setItem('storynest:token', token);
-      await AsyncStorage.setItem('storynest:user', JSON.stringify(user));
-      setAuthToken(token);
+      await dependencies.storage.setItem('storynest:token', token);
+      await dependencies.storage.setItem('storynest:user', JSON.stringify(user));
+      dependencies.setAuthToken?.(token);
       set({ user, token, loading: false });
     } catch (error) {
       console.error(error);
@@ -68,9 +111,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
   logout: async () => {
-    await AsyncStorage.removeItem('storynest:token');
-    await AsyncStorage.removeItem('storynest:user');
-    setAuthToken(null);
+    await dependencies.storage.removeItem('storynest:token');
+    await dependencies.storage.removeItem('storynest:user');
+    ensureApiDependencies();
+    dependencies.setAuthToken?.(null);
     set({ user: null, token: null });
   }
 }));
+
+export const resetAuthStoreState = () => {
+  useAuthStore.setState({
+    user: null,
+    token: null,
+    loading: false,
+    error: null
+  });
+};
