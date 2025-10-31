@@ -19,3 +19,4 @@ dist/
 # Environment
 backend/.env
 backend/storynest.db
+mobile/android/app/debug.keystore

@@ -17,6 +17,7 @@ import { getUserById, isPremiumActive } from '../db/repositories/userRepository.
 import type { Story } from '../types/story.js';
 
 const openai = env.openAiApiKey ? new OpenAI({ apiKey: env.openAiApiKey }) : null;
+
 export interface GenerateStoryInput {
   userId: string;
   prompt: string;
