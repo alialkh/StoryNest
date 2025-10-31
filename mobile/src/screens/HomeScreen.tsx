@@ -5,6 +5,7 @@ import { PromptComposer } from '../components/PromptComposer';
 import { StoryCard } from '../components/StoryCard';
 import { useStoryStore } from '../store/storyStore';
 import type { Story } from '../types';
+import { EnchantedBackground } from '../components/EnchantedBackground';
 
 interface Props {
   onContinueStory: (story: Story) => void;
@@ -50,15 +51,38 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <EnchantedBackground contentStyle={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.hero}>
+          <Text variant="displaySmall" style={styles.heroTitle}>
+            Spin a new adventure
+          </Text>
+          <Text variant="bodyLarge" style={styles.heroSubtitle}>
+            Prompt your imagination and unlock vibrant short stories crafted just for you.
+          </Text>
+        </View>
         <PromptComposer onSubmit={handleGenerate} disabled={loading} remaining={remaining} />
-        <View style={styles.headerRow}>
-          <Text variant="titleMedium">Latest story</Text>
-          <Button onPress={onOpenLibrary}>Library</Button>
-          <Button mode="outlined" onPress={onUpgrade} icon="crown">
-            Upgrade
-          </Button>
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text variant="titleLarge" style={styles.sectionTitle}>
+              Latest story
+            </Text>
+            <Text variant="bodySmall" style={styles.sectionHint}>
+              Continue where you left off or share a favourite moment.
+            </Text>
+          </View>
+          <View style={styles.actions}>
+            <Button mode="text" onPress={onOpenLibrary} icon="bookshelf">
+              Library
+            </Button>
+            <Button mode="contained-tonal" onPress={onUpgrade} icon="crown">
+              Upgrade
+            </Button>
+          </View>
         </View>
         {loading && stories.length === 0 ? <ActivityIndicator animating /> : null}
         {latest ? (
@@ -75,23 +99,50 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={2500}>
         {snackbar}
       </Snackbar>
-    </View>
+    </EnchantedBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC'
+    flex: 1
   },
   content: {
-    padding: 16
+    paddingBottom: 48,
+    gap: 24
   },
-  headerRow: {
+  hero: {
+    gap: 12,
+    padding: 20,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    shadowColor: '#1E1E46',
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3
+  },
+  heroTitle: {
+    color: '#4C1D95'
+  },
+  heroSubtitle: {
+    color: '#4338CA'
+  },
+  sectionHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 12
+    gap: 12
+  },
+  sectionTitle: {
+    color: '#312E81'
+  },
+  sectionHint: {
+    color: '#433C68'
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 8
   },
   emptyState: {
     marginTop: 16,
