@@ -26,7 +26,7 @@ export const AppNavigator: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [continuationStory, setContinuationStory] = useState<Story | null>(null);
 
-  const theme = useMemo(
+  const paperTheme = useMemo(
     () => ({
       ...MD3LightTheme,
       roundness: 20,
@@ -87,7 +87,7 @@ export const AppNavigator: React.FC = () => {
   );
 
   return (
-    <PaperProvider theme={theme}>
+    <PaperProvider theme={paperTheme}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {user ? (
