@@ -1,6 +1,7 @@
 # Node
 node_modules/
 dist/
+mobile/dist-tests/
 *.log
 
 # Expo / React Native

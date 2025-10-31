@@ -8,6 +8,7 @@ import { LibraryScreen } from '../screens/LibraryScreen';
 import { ContinuationScreen } from '../screens/ContinuationScreen';
 import { UpgradeScreen } from '../screens/UpgradeScreen';
 import { useAuthStore } from '../store/authStore';
+import { createPaperTheme } from '../theme/createPaperTheme';
 import type { Story } from '../types';
 
 export type RootStackParamList = {
@@ -26,38 +27,14 @@ export const AppNavigator: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [continuationStory, setContinuationStory] = useState<Story | null>(null);
 
-  const paperTheme = useMemo(
-    () => ({
-      ...MD3LightTheme,
-      roundness: 20,
-      colors: {
-        ...MD3LightTheme.colors,
-        primary: '#7C3AED',
-        secondary: '#F472B6',
-        tertiary: '#FBBF24',
-        surface: 'rgba(255,255,255,0.92)',
-        surfaceVariant: '#ECE1FF',
-        background: 'transparent',
-        onPrimary: '#F8F8FF'
-      },
-      fonts: configureFonts({
-        config: {
-          displaySmall: { fontFamily: 'System', fontWeight: '700' },
-          headlineMedium: { fontFamily: 'System', fontWeight: '700' },
-          titleMedium: { fontFamily: 'System', fontWeight: '600' },
-          bodyMedium: { fontFamily: 'System', fontWeight: '400' }
-        }
-      })
-    }),
-    []
-  );
+  const paperTheme = useMemo(() => createPaperTheme(), []);
 
   useEffect(() => {
     void initialise().finally(() => setLoading(false));
   }, [initialise]);
 
   if (loading) {
-    return <ActivityIndicator style={{ flex: 1 }} />;
+    return <ActivityIndicator testID="app-loading-indicator" style={{ flex: 1 }} />;
   }
 
   const theme = useMemo(
