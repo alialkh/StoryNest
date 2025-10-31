@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ActivityIndicator, Provider as PaperProvider } from 'react-native-paper';
+import { ActivityIndicator, MD3LightTheme, Provider as PaperProvider, configureFonts } from 'react-native-paper';
 import { AuthScreen } from '../screens/AuthScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LibraryScreen } from '../screens/LibraryScreen';
@@ -36,6 +36,32 @@ export const AppNavigator: React.FC = () => {
   if (loading) {
     return <ActivityIndicator testID="app-loading-indicator" style={{ flex: 1 }} />;
   }
+
+  const theme = useMemo(
+    () => ({
+      ...MD3LightTheme,
+      roundness: 20,
+      colors: {
+        ...MD3LightTheme.colors,
+        primary: '#7C3AED',
+        secondary: '#F472B6',
+        tertiary: '#FBBF24',
+        surface: 'rgba(255,255,255,0.92)',
+        surfaceVariant: '#ECE1FF',
+        background: 'transparent',
+        onPrimary: '#F8F8FF'
+      },
+      fonts: configureFonts({
+        config: {
+          displaySmall: { fontFamily: 'System', fontWeight: '700' },
+          headlineMedium: { fontFamily: 'System', fontWeight: '700' },
+          titleMedium: { fontFamily: 'System', fontWeight: '600' },
+          bodyMedium: { fontFamily: 'System', fontWeight: '400' }
+        }
+      })
+    }),
+    []
+  );
 
   return (
     <PaperProvider theme={paperTheme}>
