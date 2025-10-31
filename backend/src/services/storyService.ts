@@ -1,4 +1,4 @@
-import { Configuration, OpenAIApi } from 'openai';
+import OpenAI from 'openai';
 import { randomUUID } from 'crypto';
 import dayjs from 'dayjs';
 import { env } from '../config/env.js';
@@ -16,12 +16,7 @@ import {
 import { getUserById, isPremiumActive } from '../db/repositories/userRepository.js';
 import type { Story } from '../types/story.js';
 
-const configuration = env.openAiApiKey
-  ? new Configuration({ apiKey: env.openAiApiKey })
-  : null;
-
-const openai = configuration ? new OpenAIApi(configuration) : null;
-
+const openai = env.openAiApiKey ? new OpenAI({ apiKey: env.openAiApiKey }) : null;
 export interface GenerateStoryInput {
   userId: string;
   prompt: string;

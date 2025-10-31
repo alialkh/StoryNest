@@ -1,6 +1,10 @@
-import { randomUUID } from 'crypto';
 import dayjs from 'dayjs';
-import bcrypt from 'bcrypt';
+import {
+  randomBytes,
+  randomUUID,
+  scryptSync,
+  timingSafeEqual
+} from 'crypto';
 import { db } from '../index.js';
 import type { User, UserTier } from '../../types/user.js';
 
@@ -9,9 +13,28 @@ export interface CreateUserInput {
   password: string;
 }
 
+const hashPassword = (password: string): string => {
+  const salt = randomBytes(16).toString('hex');
+  const derived = scryptSync(password, Buffer.from(salt, 'hex'), 64).toString('hex');
+  return `s:${salt}:${derived}`;
+};
+
+const verifyPasswordHash = (stored: string, password: string): boolean => {
+  if (!stored.startsWith('s:')) {
+    return false;
+  }
+  const [, saltHex, hashHex] = stored.split(':');
+  if (!saltHex || !hashHex) {
+    return false;
+  }
+  const expected = Buffer.from(hashHex, 'hex');
+  const actual = scryptSync(password, Buffer.from(saltHex, 'hex'), expected.length);
+  return timingSafeEqual(expected, actual);
+};
+
 export const createUser = ({ email, password }: CreateUserInput): User => {
   const id = randomUUID();
-  const passwordHash = bcrypt.hashSync(password, 10);
+  const passwordHash = hashPassword(password);
   const stmt = db.prepare(
     'INSERT INTO users (id, email, password_hash, tier) VALUES (?, ?, ?, ?)' 
   );
@@ -31,9 +54,8 @@ export const getUserById = (id: string): User | null => {
   return user ?? null;
 };
 
-export const verifyPassword = (user: User, password: string): boolean => {
-  return bcrypt.compareSync(password, user.password_hash);
-};
+export const verifyPassword = (user: User, password: string): boolean =>
+  verifyPasswordHash(user.password_hash, password);
 
 export const updateTier = (userId: string, tier: UserTier, premiumDays?: number): User | null => {
   const premiumUntil =
