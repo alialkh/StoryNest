@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, HelperText, SegmentedButtons, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 
@@ -11,16 +11,45 @@ interface Props {
   onModeChange?: (mode: Mode) => void;
 }
 
-const tones = ['Emotional', 'Playful', 'Dark', 'Hopeful'];
-const genres = ['Fantasy', 'Sci-Fi', 'Romance', 'Mystery'];
+const tones = ['Emotional', 'Playful', 'Dark', 'Hopeful'] as const;
+const genres = ['Fantasy', 'Sci-Fi', 'Romance', 'Mystery'] as const;
+
+type ToneOption = (typeof tones)[number];
+type GenreOption = (typeof genres)[number];
+
+const defaultPlaceholder = "A detective who realizes he's investigating himself.";
+
+const genreExamples: Record<GenreOption, string> = {
+  Fantasy: 'An apprentice mage forging a peace treaty between dragons and humans.',
+  'Sci-Fi': 'A shuttle mechanic uncovering a glitchy AI haunting the station.',
+  Romance: 'Two rival bakers anonymously swapping love-soaked recipes.',
+  Mystery: 'A sleepwalking witness piecing together a crime scene from dreams.'
+};
+
+const toneDescriptors: Record<ToneOption, string> = {
+  Emotional: 'Told through tender diary entries.',
+  Playful: 'Sprinkled with mischievous asides and witty banter.',
+  Dark: 'Shrouded in ominous whispers and creeping dread.',
+  Hopeful: 'Ending with a quiet promise of brighter tomorrows.'
+};
 
 export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining, onModeChange }) => {
   const [prompt, setPrompt] = useState('');
-  const [tone, setTone] = useState<string | null>(null);
-  const [genre, setGenre] = useState<string | null>(null);
+  const [tone, setTone] = useState<ToneOption | null>(null);
+  const [genre, setGenre] = useState<GenreOption | null>(null);
   const [mode, setMode] = useState<Mode>('standard');
   const [error, setError] = useState('');
   const theme = useTheme();
+
+  const placeholder = useMemo(() => {
+    const base = genre ? genreExamples[genre] : defaultPlaceholder;
+    if (!tone) {
+      return base;
+    }
+
+    const descriptor = toneDescriptors[tone];
+    return `${base} ${descriptor}`;
+  }, [genre, tone]);
 
   const handleSubmit = () => {
     if (!prompt.trim()) {
@@ -65,7 +94,7 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
         multiline
         numberOfLines={3}
         style={styles.input}
-        placeholder="A detective who realizes he's investigating himself"
+        placeholder={placeholder}
       />
       <HelperText type={error ? 'error' : 'info'} visible style={{ color: error ? theme.colors.error : theme.colors.secondary }}>
         {error ||
@@ -76,7 +105,7 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
       <View style={styles.row}>
         <SegmentedButtons
           value={tone ?? ''}
-          onValueChange={(value) => setTone(value || null)}
+          onValueChange={(value) => setTone((value || null) as ToneOption | null)}
           buttons={tones.map((label) => ({ value: label, label }))}
           style={[styles.segmented, { backgroundColor: theme.colors.surfaceVariant }]}
         />
@@ -84,7 +113,7 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
       <View style={styles.row}>
         <SegmentedButtons
           value={genre ?? ''}
-          onValueChange={(value) => setGenre(value || null)}
+          onValueChange={(value) => setGenre((value || null) as GenreOption | null)}
           buttons={genres.map((label) => ({ value: label, label }))}
           style={[styles.segmented, { backgroundColor: theme.colors.surfaceVariant }]}
         />
