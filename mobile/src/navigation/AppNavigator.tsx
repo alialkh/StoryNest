@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, Provider as PaperProvider } from 'react-native-paper';
 import { AuthScreen } from '../screens/AuthScreen';
@@ -10,6 +10,7 @@ import { UpgradeScreen } from '../screens/UpgradeScreen';
 import { useAuthStore } from '../store/authStore';
 import { createPaperTheme } from '../theme/createPaperTheme';
 import type { Story } from '../types';
+import { useThemeStore } from '../store/themeStore';
 
 export type RootStackParamList = {
   Auth: undefined;
@@ -26,20 +27,41 @@ export const AppNavigator: React.FC = () => {
   const initialise = useAuthStore((state) => state.initialise);
   const [loading, setLoading] = useState(true);
   const [continuationStory, setContinuationStory] = useState<Story | null>(null);
+  const themeMode = useThemeStore((state) => state.mode);
+  const hydrateTheme = useThemeStore((state) => state.hydrate);
+  const themeHydrated = useThemeStore((state) => state.hydrated);
 
-  const paperTheme = useMemo(() => createPaperTheme(), []);
+  const paperTheme = useMemo(() => createPaperTheme(themeMode), [themeMode]);
+
+  const navigationTheme = useMemo(
+    () => ({
+      ...(themeMode === 'dark' ? NavigationDarkTheme : NavigationDefaultTheme),
+      colors: {
+        ...(themeMode === 'dark' ? NavigationDarkTheme.colors : NavigationDefaultTheme.colors),
+        background: paperTheme.colors.background,
+        card: paperTheme.colors.surface,
+        text: paperTheme.colors.onSurface,
+        border: paperTheme.colors.outline
+      }
+    }),
+    [paperTheme, themeMode]
+  );
 
   useEffect(() => {
     void initialise().finally(() => setLoading(false));
   }, [initialise]);
 
-  if (loading) {
+  useEffect(() => {
+    void hydrateTheme();
+  }, [hydrateTheme]);
+
+  if (loading || !themeHydrated) {
     return <ActivityIndicator testID="app-loading-indicator" style={{ flex: 1 }} />;
   }
 
   return (
     <PaperProvider theme={paperTheme}>
-      <NavigationContainer>
+      <NavigationContainer theme={navigationTheme}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           {user ? (
             <Stack.Group>
