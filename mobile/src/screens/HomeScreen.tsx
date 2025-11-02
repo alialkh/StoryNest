@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Button, Snackbar, Text } from 'react-native-paper';
+import { ActivityIndicator, Button, Chip, Snackbar, Surface, Text, useTheme } from 'react-native-paper';
 import { PromptComposer } from '../components/PromptComposer';
 import { StoryCard } from '../components/StoryCard';
 import { useStoryStore } from '../store/storyStore';
 import type { Story } from '../types';
-import { EnchantedBackground } from '../components/EnchantedBackground';
+import { AppScaffold, type SidebarAction } from '../components/AppScaffold';
+import { useAuthStore } from '../store/authStore';
 
 interface Props {
   onContinueStory: (story: Story) => void;
@@ -21,7 +22,10 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
   const fetchStories = useStoryStore((state) => state.fetchStories);
   const generateStory = useStoryStore((state) => state.generateStory);
   const shareStory = useStoryStore((state) => state.shareStory);
+  const logout = useAuthStore((state) => state.logout);
   const [snackbar, setSnackbar] = useState<string | null>(null);
+  const theme = useTheme();
+
   const latest = useMemo(() => stories[0], [stories]);
 
   useEffect(() => {
@@ -50,102 +54,142 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
     });
   };
 
+  const sidebarActions: SidebarAction[] = [
+    {
+      key: 'library',
+      icon: 'book-open-variant',
+      label: 'Story library',
+      onPress: onOpenLibrary
+    },
+    {
+      key: 'upgrade',
+      icon: 'crown-outline',
+      label: 'Upgrade to Premium',
+      onPress: onUpgrade
+    },
+    {
+      key: 'logout',
+      icon: 'logout',
+      label: 'Sign out',
+      onPress: () => {
+        void logout();
+      }
+    }
+  ];
+
   return (
-    <EnchantedBackground contentStyle={styles.container}>
+    <AppScaffold
+      title="Daily story lab"
+      subtitle="Compose original adventures in a few taps"
+      sidebarActions={sidebarActions}
+    >
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.hero}>
-          <Text variant="displaySmall" style={styles.heroTitle}>
-            Spin a new adventure
-          </Text>
-          <Text variant="bodyLarge" style={styles.heroSubtitle}>
+        <Surface style={[styles.hero, { backgroundColor: theme.colors.surface }]} elevation={2}>
+          <View style={styles.heroHeader}>
+            <Text variant="headlineMedium" style={[styles.heroTitle, { color: theme.colors.onSurface }]}>
+              Spin a new adventure
+            </Text>
+            <Chip icon="star-four-points" textStyle={{ color: theme.colors.onPrimary }} style={[styles.heroBadge, { backgroundColor: theme.colors.primary }]}>
+              Fresh inspiration
+            </Chip>
+          </View>
+          <Text variant="bodyLarge" style={[styles.heroSubtitle, { color: theme.colors.onSurfaceVariant }]}>
             Prompt your imagination and unlock vibrant short stories crafted just for you.
           </Text>
-        </View>
-        <PromptComposer onSubmit={handleGenerate} disabled={loading} remaining={remaining} />
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text variant="titleLarge" style={styles.sectionTitle}>
-              Latest story
-            </Text>
-            <Text variant="bodySmall" style={styles.sectionHint}>
-              Continue where you left off or share a favourite moment.
-            </Text>
-          </View>
-          <View style={styles.actions}>
-            <Button mode="text" onPress={onOpenLibrary} icon="bookshelf">
+          <View style={styles.heroActions}>
+            <Button mode="contained-tonal" icon="book-open-page-variant" onPress={onOpenLibrary}>
               Library
             </Button>
-            <Button mode="contained-tonal" onPress={onUpgrade} icon="crown">
+            <Button mode="contained" icon="crown" onPress={onUpgrade}>
               Upgrade
             </Button>
           </View>
-        </View>
-        {loading && stories.length === 0 ? <ActivityIndicator animating /> : null}
-        {latest ? (
-          <StoryCard story={latest} onContinue={onContinueStory} onShare={handleShare} isLatest />
-        ) : (
-          <Text variant="bodyMedium" style={styles.emptyState}>
-            No stories yet. Start by crafting your first tale!
-          </Text>
-        )}
+        </Surface>
+        <PromptComposer onSubmit={handleGenerate} disabled={loading} remaining={remaining} />
+        <Surface style={[styles.section, { backgroundColor: theme.colors.surface }]} elevation={1}>
+          <View style={styles.sectionHeader}>
+            <Text variant="titleLarge" style={{ color: theme.colors.onSurface }}>
+              Latest story
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Continue where you left off or share a favourite moment.
+            </Text>
+          </View>
+          {loading && stories.length === 0 ? <ActivityIndicator animating /> : null}
+          {latest ? (
+            <StoryCard story={latest} onContinue={onContinueStory} onShare={handleShare} isLatest />
+          ) : (
+            <Text variant="bodyMedium" style={[styles.emptyState, { color: theme.colors.onSurfaceVariant }]}>
+              No stories yet. Start by crafting your first tale!
+            </Text>
+          )}
+        </Surface>
         {stories.slice(1).map((story) => (
           <StoryCard key={story.id} story={story} onContinue={onContinueStory} onShare={handleShare} />
         ))}
       </ScrollView>
-      <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar(null)} duration={2500}>
+      <Snackbar
+        visible={!!snackbar}
+        onDismiss={() => setSnackbar(null)}
+        duration={2500}
+        style={{ backgroundColor: theme.colors.secondary }}
+        action={{ label: 'Close', onPress: () => setSnackbar(null) }}
+      >
         {snackbar}
       </Snackbar>
-    </EnchantedBackground>
+    </AppScaffold>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  scroll: {
     flex: 1
   },
   content: {
-    paddingBottom: 48,
+    paddingBottom: 56,
     gap: 24
   },
   hero: {
-    gap: 12,
-    padding: 20,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    shadowColor: '#1E1E46',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 3
+    padding: 24,
+    borderRadius: 28,
+    gap: 16
   },
-  heroTitle: {
-    color: '#4C1D95'
-  },
-  heroSubtitle: {
-    color: '#4338CA'
-  },
-  sectionHeader: {
+  heroHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12
   },
-  sectionTitle: {
-    color: '#312E81'
+  heroTitle: {
+    flex: 1,
+    marginRight: 16
   },
-  sectionHint: {
-    color: '#433C68'
+  heroSubtitle: {
+    lineHeight: 22
   },
-  actions: {
+  heroActions: {
     flexDirection: 'row',
-    gap: 8
+    gap: 12,
+    flexWrap: 'wrap'
+  },
+  heroBadge: {
+    borderRadius: 24
+  },
+  section: {
+    padding: 20,
+    borderRadius: 28,
+    gap: 16
+  },
+  sectionHeader: {
+    gap: 6
   },
   emptyState: {
-    marginTop: 16,
-    textAlign: 'center'
+    textAlign: 'center',
+    marginTop: 8
   }
 });

@@ -1,27 +1,36 @@
 import React from 'react';
 import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { useTheme } from 'react-native-paper';
 
 interface Props {
   children: React.ReactNode;
-  /**
-   * Optional style override for the inner content container. Useful when a screen
-   * needs to customise padding or layout alignment while keeping the decorative
-   * background consistent.
-   */
   contentStyle?: StyleProp<ViewStyle>;
-  /**
-   * Optional style override for the outer wrapper when additional layout control is required.
-   */
   style?: StyleProp<ViewStyle>;
 }
 
 export const EnchantedBackground: React.FC<Props> = ({ children, contentStyle, style }) => {
+  const theme = useTheme();
+  const isDark = theme.dark || theme.mode === 'dark';
+
+  const palette = isDark
+    ? {
+        base: '#0F172A',
+        glow: '#1E1B4B',
+        aurora: '#312E81',
+        accent: '#7C3AED'
+      }
+    : {
+        base: '#F6F3FF',
+        glow: '#E8E7FF',
+        aurora: '#FDE68A',
+        accent: '#FBCFE8'
+      };
+
   return (
-    <View style={[styles.root, style]}>
-      <View pointerEvents="none" style={[styles.orb, styles.orbOne]} />
-      <View pointerEvents="none" style={[styles.orb, styles.orbTwo]} />
-      <View pointerEvents="none" style={[styles.orb, styles.orbThree]} />
-      <View pointerEvents="none" style={styles.sparkle} />
+    <View style={[styles.root, { backgroundColor: palette.base }, style]}>
+      <View pointerEvents="none" style={[styles.orb, styles.orbOne, { backgroundColor: palette.glow }]} />
+      <View pointerEvents="none" style={[styles.orb, styles.orbTwo, { backgroundColor: palette.accent }]} />
+      <View pointerEvents="none" style={[styles.orb, styles.orbThree, { backgroundColor: palette.aurora }]} />
       <View style={[styles.content, contentStyle]}>{children}</View>
     </View>
   );
@@ -29,45 +38,31 @@ export const EnchantedBackground: React.FC<Props> = ({ children, contentStyle, s
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
-    backgroundColor: '#F7F4FF'
+    flex: 1
   },
   content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 24
+    flex: 1
   },
   orb: {
     position: 'absolute',
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    opacity: 0.45
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    opacity: 0.35,
+    transform: [{ rotate: '12deg' }]
   },
   orbOne: {
-    top: -60,
-    left: -40,
-    backgroundColor: '#C7D2FE'
+    top: -80,
+    left: -60
   },
   orbTwo: {
-    top: 120,
-    right: -80,
-    backgroundColor: '#FBCFE8'
+    bottom: -120,
+    right: -80
   },
   orbThree: {
-    bottom: -90,
-    left: -60,
-    backgroundColor: '#FDE68A'
-  },
-  sparkle: {
-    position: 'absolute',
-    top: '35%',
-    left: '20%',
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: '#DDD6FE',
+    top: '45%',
+    right: '35%',
     opacity: 0.25,
-    transform: [{ rotate: '25deg' }]
+    transform: [{ rotate: '-20deg' }]
   }
 });

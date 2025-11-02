@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, HelperText, Text, TextInput, SegmentedButtons } from 'react-native-paper';
+import { Button, HelperText, SegmentedButtons, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 
 type Mode = 'standard' | 'continuation';
 
@@ -20,6 +20,7 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
   const [genre, setGenre] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>('standard');
   const [error, setError] = useState('');
+  const theme = useTheme();
 
   const handleSubmit = () => {
     if (!prompt.trim()) {
@@ -38,22 +39,22 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
   };
 
   return (
-    <View style={styles.container}>
+    <Surface style={[styles.container, { backgroundColor: theme.colors.surface }]} elevation={2}>
       <View style={styles.header}>
-        <Text variant="titleMedium" style={styles.heading}>
+        <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
           Craft a story spark
         </Text>
-        <Text variant="bodySmall" style={styles.caption}>
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
           Choose a tone or genre for a more magical result.
         </Text>
       </View>
       <SegmentedButtons
         value={mode}
         onValueChange={handleModeChange}
-        style={styles.segmented}
+        style={[styles.segmented, { backgroundColor: theme.colors.surfaceVariant }]}
         buttons={[
-          { value: 'standard', label: 'New story' },
-          { value: 'continuation', label: 'Continue later' }
+          { value: 'standard', label: 'New story', icon: 'auto-fix' },
+          { value: 'continuation', label: 'Continue later', icon: 'progress-pencil' }
         ]}
       />
       <TextInput
@@ -66,7 +67,7 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
         style={styles.input}
         placeholder="A detective who realizes he's investigating himself"
       />
-      <HelperText type={error ? 'error' : 'info'} visible style={styles.helper}>
+      <HelperText type={error ? 'error' : 'info'} visible style={{ color: error ? theme.colors.error : theme.colors.secondary }}>
         {error ||
           (remaining === null
             ? 'Premium unlocked — unlimited stories.'
@@ -77,7 +78,7 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
           value={tone ?? ''}
           onValueChange={(value) => setTone(value || null)}
           buttons={tones.map((label) => ({ value: label, label }))}
-          style={styles.segmented}
+          style={[styles.segmented, { backgroundColor: theme.colors.surfaceVariant }]}
         />
       </View>
       <View style={styles.row}>
@@ -85,20 +86,20 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
           value={genre ?? ''}
           onValueChange={(value) => setGenre(value || null)}
           buttons={genres.map((label) => ({ value: label, label }))}
-          style={styles.segmented}
+          style={[styles.segmented, { backgroundColor: theme.colors.surfaceVariant }]}
         />
       </View>
       <Button
         mode="contained"
         onPress={handleSubmit}
         disabled={disabled}
-        icon="sparkles"
+        icon="auto-fix"
         contentStyle={styles.generateContent}
         style={styles.generateButton}
       >
         Generate story
       </Button>
-    </View>
+    </Surface>
   );
 };
 
@@ -106,36 +107,20 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     gap: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 24,
-    shadowColor: '#1F1F46',
-    shadowOpacity: 0.1,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4
+    borderRadius: 24
   },
   header: {
     gap: 4
-  },
-  heading: {
-    color: '#312E81'
-  },
-  caption: {
-    color: '#433C68'
-  },
-  input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.98)'
   },
   row: {
     marginVertical: 4
   },
   segmented: {
     marginBottom: 8,
-    backgroundColor: 'rgba(124, 58, 237, 0.08)',
     borderRadius: 16
   },
-  helper: {
-    color: '#4C1D95'
+  input: {
+    backgroundColor: 'transparent'
   },
   generateButton: {
     borderRadius: 18
