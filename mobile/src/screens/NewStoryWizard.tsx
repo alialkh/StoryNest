@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, SegmentedButtons, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GenreTile } from '../components/GenreTile';
@@ -84,185 +84,193 @@ export const NewStoryWizard: React.FC<Props> = ({ onCancel, onSubmit, disabled, 
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: theme.colors.background }]}>
-      <LoadingModal visible={isGenerating} message="Creating your story..." />
-      <View style={styles.header}>
-        <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-          {pageTitle}
-        </Text>
-        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-          Step {progressText}
-        </Text>
-      </View>
-
-      {/* Genre Step */}
-      {currentStep === 'genre' && (
-        <FlatList
-          data={genreList}
-          numColumns={2}
-          contentContainerStyle={styles.genreGrid}
-          keyExtractor={([g]) => g}
-          renderItem={({ item: [genre, genreTheme] }) => (
-            <GenreTile
-              genre={genre}
-              theme={genreTheme}
-              selected={selectedGenre === genre}
-              onPress={() => handleGenreSelect(genre)}
-            />
-          )}
-          scrollEnabled
-          nestedScrollEnabled
-        />
-      )}
-
-      {/* Tone Step */}
-      {currentStep === 'tone' && selectedGenreTheme && (
-        <ScrollView contentContainerStyle={styles.toneContainer} showsVerticalScrollIndicator={false}>
-          <Surface style={[styles.genreBadge, { backgroundColor: selectedGenreTheme.color }]} elevation={2}>
-            <Text
-              variant="titleMedium"
-              style={{ color: '#FFFFFF', textAlign: 'center' }}
-            >
-              {selectedGenre}
-            </Text>
-            <Text
-              variant="bodySmall"
-              style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}
-            >
-              {selectedGenreTheme.description}
-            </Text>
-          </Surface>
-
-          <View style={styles.toneButtons}>
-            {tones.map((tone) => (
-              <Button
-                key={tone}
-                mode={selectedTone === tone ? 'contained' : 'outlined'}
-                onPress={() => handleToneSelect(tone)}
-                style={[
-                  styles.toneButton,
-                  selectedTone === tone && { backgroundColor: selectedGenreTheme.color }
-                ]}
-              >
-                {tone}
-              </Button>
-            ))}
-          </View>
-        </ScrollView>
-      )}
-
-      {/* Archetype Step */}
-      {currentStep === 'archetype' && selectedGenreTheme && (
-        <ScrollView contentContainerStyle={styles.archetypeContainer} showsVerticalScrollIndicator={false}>
-          <Surface style={[styles.genreBadge, { backgroundColor: selectedGenreTheme.color }]} elevation={2}>
-            <Text
-              variant="titleMedium"
-              style={{ color: '#FFFFFF', textAlign: 'center' }}
-            >
-              {selectedGenre} • {selectedTone}
-            </Text>
-            <Text
-              variant="bodySmall"
-              style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center', marginTop: 8 }}
-            >
-              Who is your main character?
-            </Text>
-          </Surface>
-
-          <View style={styles.archetypeGrid}>
-            {archetypes.map((archetype) => (
-              <Button
-                key={archetype}
-                mode={selectedArchetype === archetype ? 'contained' : 'outlined'}
-                onPress={() => handleArchetypeSelect(archetype)}
-                style={[
-                  styles.archetypeButton,
-                  selectedArchetype === archetype && { backgroundColor: selectedGenreTheme.color }
-                ]}
-              >
-                {archetype}
-              </Button>
-            ))}
-          </View>
-        </ScrollView>
-      )}
-
-      {/* Prompt Step */}
-      {currentStep === 'prompt' && selectedGenreTheme && (
-        <ScrollView contentContainerStyle={styles.promptContainer} showsVerticalScrollIndicator={false}>
-          <Surface style={[styles.genreBadge, { backgroundColor: selectedGenreTheme.color }]} elevation={2}>
-            <Text variant="labelMedium" style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}>
-              {selectedGenre} • {selectedTone} • {selectedArchetype}
-            </Text>
-          </Surface>
-
-          <TextInput
-            label="Your story prompt"
-            value={prompt}
-            onChangeText={(t) => {
-              setPrompt(t);
-              setError('');
-            }}
-            mode="outlined"
-            multiline
-            numberOfLines={4}
-            style={styles.promptInput}
-            placeholder={generateNewSuggestion(undefined, selectedGenre)}
+      <KeyboardAvoidingView
+        style={styles.avoiding}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.select({ ios: 80, default: 0 })}
+      >
+        <LoadingModal visible={isGenerating} message="Creating your story..." />
+        <View style={styles.header}>
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+            {pageTitle}
+          </Text>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            Step {progressText}
+          </Text>
+        </View>
+        {/* Genre Step */}
+        {currentStep === 'genre' && (
+          <FlatList
+            data={genreList}
+            numColumns={2}
+            contentContainerStyle={styles.genreGrid}
+            keyExtractor={([g]) => g}
+            renderItem={({ item: [genre, genreTheme] }) => (
+              <GenreTile
+                genre={genre}
+                theme={genreTheme}
+                selected={selectedGenre === genre}
+                onPress={() => handleGenreSelect(genre)}
+              />
+            )}
+            scrollEnabled
+            nestedScrollEnabled
           />
+        )}
 
-          {error ? (
-            <Text style={[styles.error, { color: theme.colors.error }]}>{error}</Text>
-          ) : null}
+        {/* Tone Step */}
+        {currentStep === 'tone' && selectedGenreTheme && (
+          <ScrollView contentContainerStyle={styles.toneContainer} showsVerticalScrollIndicator={false}>
+            <Surface style={[styles.genreBadge, { backgroundColor: selectedGenreTheme.color }]} elevation={2}>
+              <Text
+                variant="titleMedium"
+                style={{ color: '#FFFFFF', textAlign: 'center' }}
+              >
+                {selectedGenre}
+              </Text>
+              <Text
+                variant="bodySmall"
+                style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}
+              >
+                {selectedGenreTheme.description}
+              </Text>
+            </Surface>
 
-          {remaining !== null ? (
-            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-              {remaining > 0 ? `${remaining} stories remaining today.` : 'Daily limit reached.'}
-            </Text>
-          ) : (
-            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-              Premium unlocked — unlimited stories.
-            </Text>
-          )}
-        </ScrollView>
-      )}
+            <View style={styles.toneButtons}>
+              {tones.map((tone) => (
+                <Button
+                  key={tone}
+                  mode={selectedTone === tone ? 'contained' : 'outlined'}
+                  onPress={() => handleToneSelect(tone)}
+                  style={[
+                    styles.toneButton,
+                    selectedTone === tone && { backgroundColor: selectedGenreTheme.color }
+                  ]}
+                >
+                  {tone}
+                </Button>
+              ))}
+            </View>
+          </ScrollView>
+        )}
 
-      {/* Footer Buttons */}
-      <View style={styles.footer}>
-        <Button
-          mode="text"
-          onPress={currentStep === 'genre' ? onCancel : () => {
-            if (currentStep === 'tone') setStep('genre');
-            else if (currentStep === 'archetype') setStep('tone');
-            else if (currentStep === 'prompt') setStep('archetype');
-          }}
-          icon={currentStep === 'genre' ? 'close' : 'arrow-left'}
-        >
-          {currentStep === 'genre' ? 'Cancel' : 'Back'}
-        </Button>
-        <Button
-          mode="contained"
-          onPress={
-            currentStep === 'tone'
-              ? () => setStep('archetype')
-              : currentStep === 'archetype'
-                ? () => setStep('prompt')
-                : currentStep === 'prompt'
-                  ? handlePromptSubmit
-                  : undefined
-          }
-          disabled={
-            currentStep === 'genre' || disabled || (currentStep === 'prompt' && !prompt.trim())
-          }
-          icon={currentStep === 'prompt' ? 'auto-fix' : 'arrow-right'}
-        >
-          {currentStep === 'prompt' ? 'Generate' : 'Next'}
-        </Button>
-      </View>
+        {/* Archetype Step */}
+        {currentStep === 'archetype' && selectedGenreTheme && (
+          <ScrollView contentContainerStyle={styles.archetypeContainer} showsVerticalScrollIndicator={false}>
+            <Surface style={[styles.genreBadge, { backgroundColor: selectedGenreTheme.color }]} elevation={2}>
+              <Text
+                variant="titleMedium"
+                style={{ color: '#FFFFFF', textAlign: 'center' }}
+              >
+                {selectedGenre} • {selectedTone}
+              </Text>
+              <Text
+                variant="bodySmall"
+                style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center', marginTop: 8 }}
+              >
+                Who is your main character?
+              </Text>
+            </Surface>
+
+            <View style={styles.archetypeGrid}>
+              {archetypes.map((archetype) => (
+                <Button
+                  key={archetype}
+                  mode={selectedArchetype === archetype ? 'contained' : 'outlined'}
+                  onPress={() => handleArchetypeSelect(archetype)}
+                  style={[
+                    styles.archetypeButton,
+                    selectedArchetype === archetype && { backgroundColor: selectedGenreTheme.color }
+                  ]}
+                >
+                  {archetype}
+                </Button>
+              ))}
+            </View>
+          </ScrollView>
+        )}
+
+        {/* Prompt Step */}
+        {currentStep === 'prompt' && selectedGenreTheme && (
+          <ScrollView contentContainerStyle={styles.promptContainer} showsVerticalScrollIndicator={false}>
+            <Surface style={[styles.genreBadge, { backgroundColor: selectedGenreTheme.color }]} elevation={2}>
+              <Text variant="labelMedium" style={{ color: 'rgba(255,255,255,0.85)', textAlign: 'center' }}>
+                {selectedGenre} • {selectedTone} • {selectedArchetype}
+              </Text>
+            </Surface>
+
+            <TextInput
+              label="Your story prompt"
+              value={prompt}
+              onChangeText={(t) => {
+                setPrompt(t);
+                setError('');
+              }}
+              mode="outlined"
+              multiline
+              numberOfLines={4}
+              style={styles.promptInput}
+              placeholder={generateNewSuggestion(undefined, selectedGenre)}
+            />
+
+            {error ? (
+              <Text style={[styles.error, { color: theme.colors.error }]}>{error}</Text>
+            ) : null}
+
+            {remaining !== null ? (
+              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                {remaining > 0 ? `${remaining} stories remaining today.` : 'Daily limit reached.'}
+              </Text>
+            ) : (
+              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                Premium unlocked — unlimited stories.
+              </Text>
+            )}
+          </ScrollView>
+        )}
+
+        {/* Footer Buttons */}
+        <View style={styles.footer}>
+          <Button
+            mode="text"
+            onPress={currentStep === 'genre' ? onCancel : () => {
+              if (currentStep === 'tone') setStep('genre');
+              else if (currentStep === 'archetype') setStep('tone');
+              else if (currentStep === 'prompt') setStep('archetype');
+            }}
+            icon={currentStep === 'genre' ? 'close' : 'arrow-left'}
+          >
+            {currentStep === 'genre' ? 'Cancel' : 'Back'}
+          </Button>
+          <Button
+            mode="contained"
+            onPress={
+              currentStep === 'tone'
+                ? () => setStep('archetype')
+                : currentStep === 'archetype'
+                  ? () => setStep('prompt')
+                  : currentStep === 'prompt'
+                    ? handlePromptSubmit
+                    : undefined
+            }
+            disabled={
+              currentStep === 'genre' || disabled || (currentStep === 'prompt' && !prompt.trim())
+            }
+            icon={currentStep === 'prompt' ? 'auto-fix' : 'arrow-right'}
+          >
+            {currentStep === 'prompt' ? 'Generate' : 'Next'}
+          </Button>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1
+  },
+  avoiding: {
     flex: 1
   },
   header: {

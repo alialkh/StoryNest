@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Button, Chip, Snackbar, Surface, Text, useTheme, ProgressBar } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StoryCard } from '../components/StoryCard';
 import { ShareStoryDialog } from '../components/ShareStoryDialog';
 import { CelebrationModal } from '../components/CelebrationModal';
@@ -10,7 +11,7 @@ import { usePublicFeedStore } from '../store/publicFeedStore';
 import { useAuthStore } from '../store/authStore';
 import type { Story } from '../types';
 import { AppScaffold, type SidebarAction } from '../components/AppScaffold';
-import { formatDateLong } from '../utils/text';
+import { formatShareCooldownMessage, formatShareUnlockTime, getShareCooldownProgress } from '../utils/time';
 
 interface Props {
   onContinueStory: (story: Story) => void;
@@ -27,7 +28,6 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
   const error = useStoryStore((state) => state.error);
   const remaining = useStoryStore((state) => state.remaining);
   const fetchStories = useStoryStore((state) => state.fetchStories);
-  const shareStory = useStoryStore((state) => state.shareStory);
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const [snackbar, setSnackbar] = useState<string | null>(null);
@@ -38,7 +38,16 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
   const [selectedStoryForShare, setSelectedStoryForShare] = useState<Story | null>(null);
   const [celebrationXp, setCelebrationXp] = useState(0);
   const [celebrationVisible, setCelebrationVisible] = useState(false);
-  const { shareStory: shareToPublic, isLoading: isPublicSharingLoading } = usePublicFeedStore();
+  const {
+    shareStory: shareToPublic,
+    isLoading: isPublicSharingLoading,
+    error: publicShareError,
+    canShare: canSharePublicly,
+    shareCooldownUntil,
+    shareCooldownStartedAt,
+    hydrateShareStatus,
+    clearError: clearPublicShareError
+  } = usePublicFeedStore();
 
   // Gamification stats
   const stats = useGamificationStore((state) => state.stats);
@@ -46,21 +55,14 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
 
   // Compute stats for engagement
   const rootStories = useMemo(() => stories.filter(s => !s.continued_from_id), [stories]);
-  const todayStories = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return rootStories.filter(s => s.created_at?.startsWith(today) || false);
-  }, [rootStories]);
-  
   // Prefer the most recent root (original) story for display
   const latest = useMemo(() => rootStories[0], [rootStories]);
   
-  const dailyLimit = remaining !== null ? (remaining <= 3 ? remaining : remaining) : null;
-  const storiesCreatedToday = rootStories.length > 0 ? todayStories.length : 0;
-
   useEffect(() => {
     void fetchStories();
     void fetchStats();
-  }, [fetchStories, fetchStats]);
+    void hydrateShareStatus();
+  }, [fetchStories, fetchStats, hydrateShareStatus]);
 
   useEffect(() => {
     if (error) {
@@ -68,10 +70,21 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
     }
   }, [error]);
 
+  useEffect(() => {
+    if (publicShareError) {
+      setSnackbar(publicShareError);
+      clearPublicShareError();
+    }
+  }, [publicShareError, clearPublicShareError]);
+
   const handleShare = (story: Story) => {
     setSelectedStoryForShare(story);
     setShareDialogVisible(true);
   };
+
+  const cooldownMessage = shareCooldownUntil ? formatShareCooldownMessage(shareCooldownUntil) : null;
+  const unlockTimeCopy = shareCooldownUntil ? formatShareUnlockTime(shareCooldownUntil) : null;
+  const shareCooldownProgress = getShareCooldownProgress(shareCooldownStartedAt, shareCooldownUntil);
 
   const handlePublicShare = async (story: Story) => {
     try {
@@ -80,8 +93,7 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
       setCelebrationVisible(true);
       setSnackbar('Story shared to community feed!');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to share';
-      setSnackbar(message);
+      // The share dialog will surface the message; store-level error state triggers the snackbar effect
     }
   };
 
@@ -257,6 +269,33 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
         {rootStories.slice(1, 3).map((story) => (
           <StoryCard key={story.id} story={story} onContinue={onContinueStory} onShare={handleShare} />
         ))}
+        {user?.tier === 'PREMIUM' && !canSharePublicly ? (
+          <Surface style={[styles.section, styles.shareLimitBanner, { backgroundColor: theme.colors.secondaryContainer }]} elevation={0}>
+            <View style={styles.shareLimitContent}>
+              <MaterialCommunityIcons name="calendar-clock" size={28} color={theme.colors.onSecondaryContainer} />
+              <View style={{ flex: 1 }}>
+                <Text variant="titleMedium" style={{ color: theme.colors.onSecondaryContainer }}>
+                  Daily share limit reached
+                </Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer, opacity: 0.8 }}>
+                  {cooldownMessage ?? 'You can share another story tomorrow.'}
+                </Text>
+                {unlockTimeCopy ? (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer, marginTop: 4, fontStyle: 'italic' }}>
+                    {unlockTimeCopy}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+            {shareCooldownProgress !== null ? (
+              <ProgressBar
+                progress={shareCooldownProgress}
+                color={theme.colors.onSecondaryContainer}
+                style={styles.shareLimitProgress}
+              />
+            ) : null}
+          </Surface>
+        ) : null}
         {rootStories.length > 3 ? (
           <Button mode="outlined" onPress={onOpenLibrary} style={styles.showAllButton} icon="book-open-page-variant">
             Show all
@@ -279,11 +318,15 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
         story={selectedStoryForShare}
         isPremium={user?.tier === 'PREMIUM'}
         isLoading={isPublicSharingLoading}
+        canShare={canSharePublicly}
+        shareCooldownUntil={shareCooldownUntil}
+        shareCooldownStartedAt={shareCooldownStartedAt}
         onShare={handlePublicShare}
         onDismiss={() => {
           setShareDialogVisible(false);
           setSelectedStoryForShare(null);
         }}
+        onUpgrade={onUpgrade}
       />
 
       {/* Celebration modal for successful share */}
@@ -353,6 +396,21 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 28,
     gap: 16
+  },
+  shareLimitBanner: {
+    borderRadius: 24,
+    paddingVertical: 16,
+    paddingHorizontal: 18
+  },
+  shareLimitContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16
+  },
+  shareLimitProgress: {
+    marginTop: 16,
+    borderRadius: 999,
+    height: 6
   },
   sectionHeader: {
     gap: 6

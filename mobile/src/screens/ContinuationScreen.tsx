@@ -85,7 +85,11 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
 
   return (
     <AppScaffold title="Continue the tale" subtitle="Add a prompt or let StoryNest improvise the next chapter" onBack={onBack}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Story Title with Menu */}
         {editingTitle ? (
           <TextInput
@@ -169,7 +173,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
           // show the AI suggestion as a placeholder (grayed) but don't fill the value
           placeholder={prompt.trim() ? '' : (suggestion ?? 'Introduce a new twist with an unexpected ally')}
         />
-                {message ? (
+        {message ? (
           <Text style={[styles.message, { color: theme.colors.tertiary }]}>{message}</Text>
         ) : null}
         <View style={styles.footer}>

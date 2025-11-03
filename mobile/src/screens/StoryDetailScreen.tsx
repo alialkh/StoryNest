@@ -120,7 +120,11 @@ export const StoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <AppScaffold title="Community Story" onBack={() => navigation.goBack()}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Story Content */}
         <Card style={styles.storyCard}>
           <Card.Content>

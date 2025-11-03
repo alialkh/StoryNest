@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Surface, useTheme, Text } from 'react-native-paper';
+import { Surface, useTheme, Text, TouchableRipple } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -25,33 +25,68 @@ export const BottomBar: React.FC = () => {
     }
   };
 
+  const items = [
+    {
+      key: 'home',
+      label: 'Home',
+      icon: 'home-variant' as const,
+      containerColor: theme.colors.primaryContainer,
+      iconColor: theme.colors.onPrimaryContainer,
+      onPress: onHome,
+      accessibilityLabel: 'Home'
+    },
+    {
+      key: 'new',
+      label: 'New',
+      icon: 'auto-fix' as const,
+      containerColor: theme.colors.secondaryContainer,
+      iconColor: theme.colors.onSecondaryContainer,
+      onPress: onNewChat,
+      accessibilityLabel: 'Start a new story'
+    },
+    {
+      key: 'library',
+      label: 'Library',
+      icon: 'bookshelf' as const,
+      containerColor: theme.colors.tertiaryContainer,
+      iconColor: theme.colors.onTertiaryContainer,
+      onPress: onLibrary,
+      accessibilityLabel: 'Story library'
+    },
+    {
+      key: 'account',
+      label: 'Account',
+      icon: 'account-circle' as const,
+      containerColor: theme.colors.primary,
+      iconColor: theme.colors.onPrimary,
+      onPress: onAccount,
+      accessibilityLabel: 'My account'
+    }
+  ];
+
   return (
-    <Surface style={[styles.container, { paddingBottom: Math.max(insets.bottom, 10), backgroundColor: theme.colors.surface }]} elevation={3}>
+    <Surface
+      style={[styles.container, { paddingBottom: Math.max(insets.bottom, 10), backgroundColor: theme.colors.surface }]}
+      elevation={3}
+    >
       <View style={styles.row}>
-        <View style={styles.item}>
-          <View style={[styles.iconPill, { backgroundColor: theme.colors.primaryContainer }]}> 
-            <MaterialCommunityIcons name="home-variant" size={22} color={theme.colors.onPrimaryContainer} accessibilityLabel="Home" />
-          </View>
-          <Text onPress={onHome} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Home">Home</Text>
-        </View>
-        <View style={styles.item}>
-          <View style={[styles.iconPill, { backgroundColor: theme.colors.secondaryContainer }]}> 
-            <MaterialCommunityIcons name="auto-fix" size={22} color={theme.colors.onSecondaryContainer} accessibilityLabel="Start a new chat" />
-          </View>
-          <Text onPress={onNewChat} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Start a new chat">New</Text>
-        </View>
-        <View style={styles.item}>
-          <View style={[styles.iconPill, { backgroundColor: theme.colors.tertiaryContainer }]}> 
-            <MaterialCommunityIcons name="bookshelf" size={22} color={theme.colors.onTertiaryContainer} accessibilityLabel="Chat library" />
-          </View>
-          <Text onPress={onLibrary} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Chat library">Library</Text>
-        </View>
-        <View style={styles.item}>
-        <View style={[styles.iconPill, { backgroundColor: theme.colors.primary }]}> 
-        <MaterialCommunityIcons name="account-circle" size={22} color={theme.colors.onPrimary} accessibilityLabel="My account" />
-        </View>
-        <Text onPress={onAccount} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="My account">Account</Text>
-        </View>
+        {items.map(({ key, label, icon, containerColor, iconColor, onPress, accessibilityLabel }) => (
+          <TouchableRipple
+            key={key}
+            onPress={onPress}
+            style={styles.touchable}
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
+            borderless
+          >
+            <View style={styles.item}>
+              <View style={[styles.iconPill, { backgroundColor: containerColor }]}>
+                <MaterialCommunityIcons name={icon} size={22} color={iconColor} />
+              </View>
+              <Text style={[styles.label, { color: theme.colors.onSurface }]}>{label}</Text>
+            </View>
+          </TouchableRipple>
+        ))}
       </View>
     </Surface>
   );
@@ -71,11 +106,16 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-around',
     paddingHorizontal: 12,
-    paddingTop: 8,
+    paddingTop: 8
+  },
+  touchable: {
+    borderRadius: 18,
+    paddingHorizontal: 6,
+    paddingVertical: 4
   },
   item: {
     alignItems: 'center',
-    gap: 6,
+    gap: 6
   },
   iconPill: {
     width: 48,

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { Keyboard, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { Divider, IconButton, List, Modal, Portal, Surface, Switch, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeStore } from '../store/themeStore';
@@ -33,6 +33,16 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
 
   const actions = sidebarActions ?? [];
 
+  const handlePrimaryAction = useCallback(() => {
+    if (onBack) {
+      Keyboard.dismiss();
+      onBack();
+      return;
+    }
+
+    setSidebarVisible(true);
+  }, [onBack]);
+
   return (
     <EnchantedBackground>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -40,7 +50,7 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
           <IconButton
             icon={onBack ? 'arrow-left' : 'menu'}
             mode="contained-tonal"
-            onPress={onBack ?? (() => setSidebarVisible(true))}
+            onPress={handlePrimaryAction}
             size={22}
           />
           <View style={styles.headerText}>
@@ -64,7 +74,13 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
           />
         </Surface>
         <Divider style={[styles.divider, { backgroundColor: theme.colors.outline, opacity: 0.2 }]} />
-        <View style={styles.body}>{children}</View>
+        <KeyboardAvoidingView
+          style={styles.avoiding}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.select({ ios: 120, default: 0 })}
+        >
+          <View style={styles.body}>{children}</View>
+        </KeyboardAvoidingView>
         <BottomBar />
       </SafeAreaView>
       <Portal>
@@ -151,6 +167,9 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginTop: 16,
     marginHorizontal: 32
+  },
+  avoiding: {
+    flex: 1
   },
   body: {
     flex: 1,

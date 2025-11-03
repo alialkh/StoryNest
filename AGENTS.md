@@ -122,6 +122,9 @@ Configure the backend origin in `mobile/app.json` (`expo.extra.apiUrl`). For loc
 - **UI composition**: Build new UI with React Native Paper MD3 components to stay consistent. Favour `Surface`, `Card`, and `List` for structural elements and keep spacing consistent with existing `StyleSheet` tokens (24px radii, 16/20 padding).
 - **Testing**: When creating component tests, add `.test.tsx` files under `mobile/tests`. Tests must compile via `tsconfig.test.json` (no Expo/React Native aliases), so avoid platform-specific modules or mock them explicitly.
 - **Icons**: Use names available in `@expo/vector-icons/MaterialCommunityIcons`. Validate icon names to avoid runtime warnings (e.g., `weather-night`, `white-balance-sunny`).
+- **Keyboard avoidance**: `AppScaffold` now wraps content in a `KeyboardAvoidingView`; add screen-level wrappers only when building flows outside the scaffold (e.g., Auth, modals) so text inputs aren't hidden behind the keyboard.
+- **Public share quota**: The public feed store persists the daily share cooldown in AsyncStorage (`publicFeed:shareCooldownUntil` and `publicFeed:shareCooldownStartedAt`). Reuse `getNextShareWindow`, `formatShareCooldownMessage`, `formatShareUnlockTime`, and `getShareCooldownProgress` from `mobile/src/utils/time.ts` when checking or presenting the quota state.
+- **Back navigation**: `AppScaffold` coordinates top-level navigation taps. When supplying an `onBack` handler pass a stable callback—`AppScaffold` already dismisses the keyboard before invoking it, preventing double-tap behaviour on text-heavy screens.
 
 ## Feature Workflows
 
