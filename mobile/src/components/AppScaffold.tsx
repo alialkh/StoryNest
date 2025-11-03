@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { StyleSheet, View, Pressable } from 'react-native';
-import { Divider, IconButton, List, Modal, Portal, Surface, Switch, Text, useTheme, Menu } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, View, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { Divider, IconButton, List, Modal, Portal, Surface, Text, useTheme, Menu } from 'react-native-paper';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeStore } from '../store/themeStore';
 import { useAuthStore } from '../store/authStore';
 import { useGamificationStore } from '../store/gamificationStore';
@@ -41,6 +41,7 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
   const stats = useGamificationStore((state) => state.stats);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   // Calculate user's XP for theme unlocking
   const userXp = stats?.total_xp ?? 0;
@@ -61,38 +62,49 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
 
   const actions = sidebarActions ?? [];
 
+  const keyboardVerticalOffset = Platform.OS === 'ios' ? insets.top + 32 : 0;
+
   return (
     <EnchantedBackground>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <Surface style={[styles.header, { backgroundColor: theme.colors.surface }]} elevation={0}>
-          <IconButton
-            icon={onBack ? 'arrow-left' : 'menu'}
-            mode="contained-tonal"
-            onPress={onBack ?? (() => setSidebarVisible(true))}
-            size={22}
-          />
-          <View style={styles.headerText}>
-            {title ? (
-              <Text variant="titleLarge" style={[styles.title, { color: theme.colors.onSurface }]}> 
-                {title}
-              </Text>
-            ) : null}
-            {subtitle ? (
-              <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}> 
-                {subtitle}
-              </Text>
-            ) : null}
-          </View>
-          <IconButton
-            icon="dots-horizontal"
-            size={22}
-            mode="contained-tonal"
-            onPress={() => setMenuVisible(true)}
-          />
-        </Surface>
-        <Divider style={[styles.divider, { backgroundColor: theme.colors.outline, opacity: 0.2 }]} />
-        <View style={styles.body}>{children}</View>
-        <BottomBar />
+      <SafeAreaView
+        style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
+        edges={['top', 'left', 'right', 'bottom']}
+      >
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoider}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={keyboardVerticalOffset}
+        >
+          <Surface style={[styles.header, { backgroundColor: theme.colors.surface }]} elevation={0}>
+            <IconButton
+              icon={onBack ? 'arrow-left' : 'menu'}
+              mode="contained-tonal"
+              onPress={onBack ?? (() => setSidebarVisible(true))}
+              size={22}
+            />
+            <View style={styles.headerText}>
+              {title ? (
+                <Text variant="titleLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
+                  {title}
+                </Text>
+              ) : null}
+              {subtitle ? (
+                <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+                  {subtitle}
+                </Text>
+              ) : null}
+            </View>
+            <IconButton
+              icon="dots-horizontal"
+              size={22}
+              mode="contained-tonal"
+              onPress={() => setMenuVisible(true)}
+            />
+          </Surface>
+          <Divider style={[styles.divider, { backgroundColor: theme.colors.outline, opacity: 0.2 }]} />
+          <View style={styles.body}>{children}</View>
+          <BottomBar />
+        </KeyboardAvoidingView>
       </SafeAreaView>
       <Portal>
         <Modal
@@ -207,6 +219,9 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
 
 const styles = StyleSheet.create({
   safeArea: {
+    flex: 1
+  },
+  keyboardAvoider: {
     flex: 1
   },
   header: {

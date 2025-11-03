@@ -86,9 +86,10 @@ export const AppNavigator: React.FC = () => {
   return (
     <PaperProvider theme={paperTheme}>
       <NavigationContainer theme={navigationTheme}>
-        <Stack.Navigator 
-          screenOptions={{ 
+        <Stack.Navigator
+          screenOptions={{
             headerShown: false,
+            contentStyle: { backgroundColor: paperTheme.colors.background }
           }}
         >
           {user ? (

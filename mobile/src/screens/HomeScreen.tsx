@@ -38,7 +38,11 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
   const [selectedStoryForShare, setSelectedStoryForShare] = useState<Story | null>(null);
   const [celebrationXp, setCelebrationXp] = useState(0);
   const [celebrationVisible, setCelebrationVisible] = useState(false);
-  const { shareStory: shareToPublic, isLoading: isPublicSharingLoading } = usePublicFeedStore();
+  const shareToPublic = usePublicFeedStore((state) => state.shareStory);
+  const isPublicSharingLoading = usePublicFeedStore((state) => state.isLoading);
+  const canShareToPublic = usePublicFeedStore((state) => state.canShare);
+  const shareCooldownUntil = usePublicFeedStore((state) => state.shareCooldownUntil);
+  const initialiseShareLimit = usePublicFeedStore((state) => state.initialiseShareLimit);
 
   // Gamification stats
   const stats = useGamificationStore((state) => state.stats);
@@ -60,7 +64,8 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
   useEffect(() => {
     void fetchStories();
     void fetchStats();
-  }, [fetchStories, fetchStats]);
+    void initialiseShareLimit();
+  }, [fetchStories, fetchStats, initialiseShareLimit]);
 
   useEffect(() => {
     if (error) {
@@ -315,6 +320,8 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
         story={selectedStoryForShare}
         isPremium={user?.tier === 'PREMIUM'}
         isLoading={isPublicSharingLoading}
+        canShare={canShareToPublic}
+        shareCooldownUntil={shareCooldownUntil}
         onShare={handlePublicShare}
         onDismiss={() => {
           setShareDialogVisible(false);
