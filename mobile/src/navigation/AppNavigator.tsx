@@ -74,24 +74,27 @@ export const AppNavigator: React.FC = () => {
   if (loading || !themeHydrated) {
     return (
       <PaperProvider theme={paperTheme}>
-        <EnchantedBackground>
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <ActivityIndicator testID="app-loading-indicator" size="large" />
-          </View>
-        </EnchantedBackground>
+        <View style={{ flex: 1, backgroundColor: paperTheme.colors.background }}>
+          <EnchantedBackground>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator testID="app-loading-indicator" size="large" />
+            </View>
+          </EnchantedBackground>
+        </View>
       </PaperProvider>
     );
   }
 
   return (
     <PaperProvider theme={paperTheme}>
-      <NavigationContainer theme={navigationTheme}>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: paperTheme.colors.background }
-          }}
-        >
+      <View style={{ flex: 1, backgroundColor: paperTheme.colors.background }}>
+        <NavigationContainer theme={navigationTheme}>
+          <Stack.Navigator
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: paperTheme.colors.background }
+            }}
+          >
           {user ? (
             <>
               <Stack.Group>
@@ -175,7 +178,8 @@ export const AppNavigator: React.FC = () => {
             <Stack.Screen name="Auth" component={AuthScreen} />
           )}
         </Stack.Navigator>
-      </NavigationContainer>
+        </NavigationContainer>
+      </View>
     </PaperProvider>
   );
 };

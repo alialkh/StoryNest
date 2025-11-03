@@ -26,7 +26,16 @@ export const BottomBar: React.FC = () => {
   };
 
   return (
-    <Surface style={[styles.container, { paddingBottom: Math.max(insets.bottom, 10), backgroundColor: theme.colors.surface }]} elevation={3}>
+    <Surface
+      style={[
+        styles.container,
+        {
+          paddingBottom: Math.max(insets.bottom, 12),
+          backgroundColor: theme.colors.surface,
+        },
+      ]}
+      elevation={3}
+    >
       <View style={styles.row}>
         <View style={styles.item}>
           <View style={[styles.iconPill, { backgroundColor: theme.colors.primaryContainer }]} onTouchEnd={onHome}> 
@@ -47,10 +56,10 @@ export const BottomBar: React.FC = () => {
           <Text onPress={onLibrary} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Chat library">Library</Text>
         </View>
         <View style={styles.item}>
-        <View style={[styles.iconPill, { backgroundColor: theme.colors.primary }]} onTouchEnd={onAccount}> 
-        <MaterialCommunityIcons name="account-circle" size={22} color={theme.colors.onPrimary} accessibilityLabel="My account" />
-        </View>
-        <Text onPress={onAccount} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="My account">Account</Text>
+          <View style={[styles.iconPill, { backgroundColor: theme.colors.primary }]} onTouchEnd={onAccount}>
+            <MaterialCommunityIcons name="account-circle" size={22} color={theme.colors.onPrimary} accessibilityLabel="My account" />
+          </View>
+          <Text onPress={onAccount} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="My account">Account</Text>
         </View>
       </View>
     </Surface>
@@ -59,19 +68,16 @@ export const BottomBar: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    width: '100%',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-around',
-    paddingHorizontal: 12,
-    paddingTop: 8,
   },
   item: {
     alignItems: 'center',

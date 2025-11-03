@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { StyleSheet, View, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { StyleSheet, View, Pressable, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { Divider, IconButton, List, Modal, Portal, Surface, Text, useTheme, Menu } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeStore } from '../store/themeStore';
@@ -41,6 +41,7 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
   const stats = useGamificationStore((state) => state.stats);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
   // Calculate user's XP for theme unlocking
@@ -64,17 +65,26 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
 
   const keyboardVerticalOffset = Platform.OS === 'ios' ? insets.top + 32 : 0;
 
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   return (
     <EnchantedBackground>
       <SafeAreaView
         style={[styles.safeArea, { backgroundColor: theme.colors.background }]}
-        edges={['top', 'left', 'right', 'bottom']}
+        edges={['top', 'left', 'right']}
       >
-        <KeyboardAvoidingView
-          style={styles.keyboardAvoider}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={keyboardVerticalOffset}
-        >
+        <View style={styles.container}>
           <Surface style={[styles.header, { backgroundColor: theme.colors.surface }]} elevation={0}>
             <IconButton
               icon={onBack ? 'arrow-left' : 'menu'}
@@ -84,7 +94,7 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
             />
             <View style={styles.headerText}>
               {title ? (
-                <Text variant="titleLarge" style={[styles.title, { color: theme.colors.onSurface }]}>
+                <Text variant="titleLarge" style={[styles.title, { color: theme.colors.onSurface }]}> 
                   {title}
                 </Text>
               ) : null}
@@ -102,9 +112,19 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
             />
           </Surface>
           <Divider style={[styles.divider, { backgroundColor: theme.colors.outline, opacity: 0.2 }]} />
-          <View style={styles.body}>{children}</View>
-          <BottomBar />
-        </KeyboardAvoidingView>
+          <KeyboardAvoidingView
+            style={styles.bodyWrapper}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={keyboardVerticalOffset}
+          >
+            <View style={styles.body}>{children}</View>
+          </KeyboardAvoidingView>
+          {!isKeyboardVisible ? (
+            <View style={styles.bottomBarContainer}>
+              <BottomBar />
+            </View>
+          ) : null}
+        </View>
       </SafeAreaView>
       <Portal>
         <Modal
@@ -221,7 +241,11 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1
   },
-  keyboardAvoider: {
+  container: {
+    flex: 1,
+    justifyContent: 'flex-start'
+  },
+  bodyWrapper: {
     flex: 1
   },
   header: {
@@ -252,8 +276,13 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingBottom: 88,
-    paddingTop: 16
+    paddingTop: 16,
+    paddingBottom: 16
+  },
+  bottomBarContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12
   },
   modalContainer: {
     justifyContent: 'flex-start'

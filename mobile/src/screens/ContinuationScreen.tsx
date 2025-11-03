@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ScrollView, StyleSheet, View, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { Button, Menu, Surface, Text, TextInput, useTheme, SegmentedButtons, IconButton } from 'react-native-paper';
 import { stripSuggestion, extractSuggestion } from '../utils/text';
@@ -34,6 +34,8 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
   const theme = useTheme();
   const themeMode = useThemeStore((s) => s.mode);
   const [menuVisible, setMenuVisible] = useState(false);
+  const scrollRef = useRef<ScrollView | null>(null);
+  const titleInputRef = useRef<TextInput | null>(null);
 
   useEffect(() => {
     // ensure store is up-to-date
@@ -84,17 +86,30 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
     });
   };
 
+  const handleToggleTitleEditing = useCallback(() => {
+    setEditingTitle((prev) => {
+      const next = !prev;
+      if (!prev && next) {
+        requestAnimationFrame(() => {
+          scrollRef.current?.scrollTo({ y: 0, animated: true });
+          titleInputRef.current?.focus();
+        });
+      }
+      return next;
+    });
+  }, []);
+
   return (
-    <AppScaffold 
-      title={parts[0]?.title || 'Story'} 
-      subtitle="Continue your tale" 
+    <AppScaffold
+      title={parts[0]?.title || 'Story'}
+      subtitle="Continue your tale"
       onBack={onBack}
       headerActions={[
         {
           key: 'edit-title',
           icon: 'pencil',
           label: 'Edit title',
-          onPress: () => setEditingTitle(!editingTitle)
+          onPress: handleToggleTitleEditing
         }
       ]}
     >
@@ -102,59 +117,64 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Story Title Editing - Hidden, Moved to Header */}
-        {editingTitle ? (
-          <TextInput
-            style={styles.titleInput}
-            value={titleText}
-            onChangeText={setTitleText}
-            placeholder="Edit title..."
-            mode="outlined"
-            onBlur={() => {
-              if (titleText && titleText !== story?.title) {
-                updateStoryTitle(story!.id, titleText);
-              }
-              setEditingTitle(false);
-            }}
-          />
-        ) : null}
-
-        {/* Story Parts */}
-        {parts.map((part, idx) => (
-          <Surface key={part.id ?? idx} style={[styles.originalCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
-            <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
-              {idx === 0 ? (part.prompt || 'Original prompt') : (part.prompt || 'Continuation')}
-            </Text>
-            <ZoomableText 
-              content={stripSuggestion(part.content)} 
-              variant="bodyMedium" 
-              style={[styles.original, { color: theme.colors.onSurface }]}
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Story Title Editing - Hidden, Moved to Header */}
+          {editingTitle ? (
+            <TextInput
+              ref={titleInputRef}
+              style={styles.titleInput}
+              value={titleText}
+              onChangeText={setTitleText}
+              placeholder="Edit title..."
+              mode="outlined"
+              onBlur={() => {
+                if (titleText && titleText !== story?.title) {
+                  updateStoryTitle(story!.id, titleText);
+                }
+                setEditingTitle(false);
+              }}
             />
-          </Surface>
-        ))}
-        <TextInput
-          label="Next chapter direction (optional)"
-          value={prompt}
-          onChangeText={setPrompt}
-          mode="outlined"
-          multiline
-          style={styles.input}
-          // show the AI suggestion as a placeholder (grayed) but don't fill the value
-          placeholder={prompt.trim() ? '' : (suggestion ?? 'Introduce a new twist with an unexpected ally')}
-        />
-                {message ? (
-          <Text style={[styles.message, { color: theme.colors.tertiary }]}>{message}</Text>
-        ) : null}
-        <View style={styles.footer}>
-          <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-            {remaining === null ? 'Unlimited continuations available.' : `${remaining ?? 3} stories remaining today.`}
-          </Text>
-          <Button mode="contained" onPress={handleContinue} loading={loading} icon="auto-fix">
-            Generate continuation
-          </Button>
-        </View>
-      </ScrollView>
+          ) : null}
+
+          {/* Story Parts */}
+          {parts.map((part, idx) => (
+            <Surface key={part.id ?? idx} style={[styles.originalCard, { backgroundColor: theme.colors.surface }]} elevation={1}>
+              <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
+                {idx === 0 ? (part.prompt || 'Original prompt') : (part.prompt || 'Continuation')}
+              </Text>
+              <ZoomableText
+                content={stripSuggestion(part.content)}
+                variant="bodyMedium"
+                style={[styles.original, { color: theme.colors.onSurface }]}
+              />
+            </Surface>
+          ))}
+          <TextInput
+            label="Next chapter direction (optional)"
+            value={prompt}
+            onChangeText={setPrompt}
+            mode="outlined"
+            multiline
+            style={styles.input}
+            // show the AI suggestion as a placeholder (grayed) but don't fill the value
+            placeholder={prompt.trim() ? '' : (suggestion ?? 'Introduce a new twist with an unexpected ally')}
+          />
+          {message ? (
+            <Text style={[styles.message, { color: theme.colors.tertiary }]}>{message}</Text>
+          ) : null}
+          <View style={styles.footer}>
+            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              {remaining === null ? 'Unlimited continuations available.' : `${remaining ?? 3} stories remaining today.`}
+            </Text>
+            <Button mode="contained" onPress={handleContinue} loading={loading} icon="auto-fix">
+              Generate continuation
+            </Button>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </AppScaffold>
   );
