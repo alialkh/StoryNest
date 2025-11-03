@@ -29,25 +29,25 @@ export const BottomBar: React.FC = () => {
     <Surface style={[styles.container, { paddingBottom: Math.max(insets.bottom, 10), backgroundColor: theme.colors.surface }]} elevation={3}>
       <View style={styles.row}>
         <View style={styles.item}>
-          <View style={[styles.iconPill, { backgroundColor: theme.colors.primaryContainer }]}> 
+          <View style={[styles.iconPill, { backgroundColor: theme.colors.primaryContainer }]} onTouchEnd={onHome}> 
             <MaterialCommunityIcons name="home-variant" size={22} color={theme.colors.onPrimaryContainer} accessibilityLabel="Home" />
           </View>
           <Text onPress={onHome} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Home">Home</Text>
         </View>
         <View style={styles.item}>
-          <View style={[styles.iconPill, { backgroundColor: theme.colors.secondaryContainer }]}> 
+          <View style={[styles.iconPill, { backgroundColor: theme.colors.secondaryContainer }]} onTouchEnd={onNewChat}> 
             <MaterialCommunityIcons name="auto-fix" size={22} color={theme.colors.onSecondaryContainer} accessibilityLabel="Start a new chat" />
           </View>
           <Text onPress={onNewChat} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Start a new chat">New</Text>
         </View>
         <View style={styles.item}>
-          <View style={[styles.iconPill, { backgroundColor: theme.colors.tertiaryContainer }]}> 
+          <View style={[styles.iconPill, { backgroundColor: theme.colors.tertiaryContainer }]} onTouchEnd={onLibrary}> 
             <MaterialCommunityIcons name="bookshelf" size={22} color={theme.colors.onTertiaryContainer} accessibilityLabel="Chat library" />
           </View>
           <Text onPress={onLibrary} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Chat library">Library</Text>
         </View>
         <View style={styles.item}>
-        <View style={[styles.iconPill, { backgroundColor: theme.colors.primary }]}> 
+        <View style={[styles.iconPill, { backgroundColor: theme.colors.primary }]} onTouchEnd={onAccount}> 
         <MaterialCommunityIcons name="account-circle" size={22} color={theme.colors.onPrimary} accessibilityLabel="My account" />
         </View>
         <Text onPress={onAccount} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="My account">Account</Text>

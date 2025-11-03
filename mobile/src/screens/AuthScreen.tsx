@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Button, HelperText, IconButton, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
@@ -34,7 +34,12 @@ export const AuthScreen: React.FC = () => {
             accessibilityLabel="Toggle color scheme"
           />
         </View>
-        <View style={styles.container}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContent}>
+            <View style={styles.container}>
           <Surface style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={3}>
             <Text variant="displaySmall" style={[styles.title, { color: theme.colors.onSurface }]}> 
               StoryNest
@@ -78,7 +83,9 @@ export const AuthScreen: React.FC = () => {
               {mode === 'login' ? 'Need an account? Register' : 'Already registered? Log in'}
             </Button>
           </Surface>
-        </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </EnchantedBackground>
   );
@@ -92,6 +99,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: 24,
     paddingTop: 16
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 48
   },
   container: {
     flex: 1,

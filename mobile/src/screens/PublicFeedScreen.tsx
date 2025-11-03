@@ -6,10 +6,11 @@ import {
   RefreshControl,
   ListRenderItemInfo
 } from 'react-native';
-import { Text, Card, Button, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Text, Card, Button, useTheme, ActivityIndicator, Dialog, Portal } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { usePublicFeedStore } from '../store/publicFeedStore';
 import { AppScaffold } from '../components/AppScaffold';
+import { useAuthStore } from '../store/authStore';
 import type { PublicStory } from '../services/publicFeedService';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
@@ -18,7 +19,9 @@ type Props = NativeStackScreenProps<RootStackParamList, 'PublicFeed'>;
 
 export const PublicFeedScreen: React.FC<Props> = ({ navigation }) => {
   const { stories, isLoading, error, loadFeed, toggleLike, likedStories } = usePublicFeedStore();
+  const user = useAuthStore((state) => state.user);
   const theme = useTheme();
+  const [premiumPopupVisible, setPremiumPopupVisible] = React.useState(false);
 
   useEffect(() => {
     loadFeed();
@@ -29,6 +32,10 @@ export const PublicFeedScreen: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleLike = async (story: PublicStory) => {
+    if (user?.tier !== 'PREMIUM') {
+      setPremiumPopupVisible(true);
+      return;
+    }
     try {
       const currentlyLiked = likedStories.has(story.id);
       await toggleLike(story.id, currentlyLiked);
@@ -78,6 +85,7 @@ export const PublicFeedScreen: React.FC<Props> = ({ navigation }) => {
               mode={isLiked ? 'contained' : 'outlined'}
               icon="heart"
               onPress={() => handleLike(item)}
+              disabled={user?.tier !== 'PREMIUM'}
               style={styles.actionButton}
               labelStyle={styles.actionButtonLabel}
             >
@@ -159,6 +167,25 @@ export const PublicFeedScreen: React.FC<Props> = ({ navigation }) => {
           }
         />
       </View>
+      <Portal>
+        <Dialog visible={premiumPopupVisible} onDismiss={() => setPremiumPopupVisible(false)}>
+          <Dialog.Title>Premium Feature</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Liking stories is a premium feature. Upgrade to premium to engage with the community!
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setPremiumPopupVisible(false)}>Cancel</Button>
+            <Button onPress={() => {
+              setPremiumPopupVisible(false);
+              navigation.navigate('Upgrade' as any);
+            }}>
+              Upgrade
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </AppScaffold>
   );
 };

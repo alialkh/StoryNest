@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Pressable } from 'react-native';
 import { Button, Card, Text, useTheme } from 'react-native-paper';
 import type { Story } from '../types';
 import { stripSuggestion, truncateWords, formatDateLong } from '../utils/text';
@@ -8,10 +8,11 @@ interface Props {
   story: Story;
   onContinue?: (story: Story) => void;
   onShare?: (story: Story) => void;
+  onViewFull?: (story: Story) => void;
   isLatest?: boolean;
 }
 
-export const StoryCard: React.FC<Props> = ({ story, onContinue, onShare, isLatest }) => {
+export const StoryCard: React.FC<Props> = ({ story, onContinue, onShare, onViewFull, isLatest }) => {
   const theme = useTheme();
 
   // Standardized card colors (remove per-conversation themed colors)
@@ -41,14 +42,16 @@ export const StoryCard: React.FC<Props> = ({ story, onContinue, onShare, isLates
         titleStyle={{ color: theme.colors.onSurface }}
       />
       <Card.Content style={styles.body}>
-        <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, lineHeight: 20 }}>
-          {displayed}
-        </Text>
-        {story.continued_from_id ? (
-          <Text variant="labelSmall" style={{ color: theme.colors.secondary, marginTop: 8 }}>
-            Continuation from previous part
+        <Pressable onPress={() => onViewFull?.(story)}>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, lineHeight: 20 }}>
+            {displayed}
           </Text>
-        ) : null}
+          {story.continued_from_id ? (
+            <Text variant="labelSmall" style={{ color: theme.colors.secondary, marginTop: 8 }}>
+              Continuation from previous part
+            </Text>
+          ) : null}
+        </Pressable>
       </Card.Content>
       <Card.Actions style={styles.actions}>
         {onContinue ? (

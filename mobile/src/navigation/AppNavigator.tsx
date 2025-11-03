@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { View } from 'react-native';
 import { NavigationContainer, DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, Provider as PaperProvider } from 'react-native-paper';
+import { EnchantedBackground } from '../components/EnchantedBackground';
 import { AuthScreen } from '../screens/AuthScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LibraryScreen } from '../screens/LibraryScreen';
 import { ContinuationScreen } from '../screens/ContinuationScreen';
 import { UpgradeScreen } from '../screens/UpgradeScreen';
 import { AccountScreen } from '../screens/AccountScreen';
+import { AllAchievementsScreen } from '../screens/AllAchievementsScreen';
 import { NewStoryWizard } from '../screens/NewStoryWizard';
 import { PublicFeedScreen } from '../screens/PublicFeedScreen';
 import { StoryDetailScreen } from '../screens/StoryDetailScreen';
@@ -24,6 +27,7 @@ export type RootStackParamList = {
   Continue: { story: Story };
   Upgrade: undefined;
   Account: undefined;
+  AllAchievements: undefined;
   NewStoryWizard: undefined;
   PublicFeed: undefined;
   StoryDetail: { storyId: string; story: any };
@@ -37,12 +41,13 @@ export const AppNavigator: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [continuationStory, setContinuationStory] = useState<Story | null>(null);
   const themeMode = useThemeStore((state) => state.mode);
+  const colorTheme = useThemeStore((state) => state.colorTheme);
   const hydrateTheme = useThemeStore((state) => state.hydrate);
   const themeHydrated = useThemeStore((state) => state.hydrated);
   const generateStory = useStoryStore((state) => state.generateStory);
   const remaining = useStoryStore((state) => state.remaining);
 
-  const paperTheme = useMemo(() => createPaperTheme(themeMode), [themeMode]);
+  const paperTheme = useMemo(() => createPaperTheme(themeMode, colorTheme), [themeMode, colorTheme]);
 
   const navigationTheme = useMemo(
     () => ({
@@ -67,13 +72,25 @@ export const AppNavigator: React.FC = () => {
   }, [hydrateTheme]);
 
   if (loading || !themeHydrated) {
-    return <ActivityIndicator testID="app-loading-indicator" style={{ flex: 1 }} />;
+    return (
+      <PaperProvider theme={paperTheme}>
+        <EnchantedBackground>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <ActivityIndicator testID="app-loading-indicator" size="large" />
+          </View>
+        </EnchantedBackground>
+      </PaperProvider>
+    );
   }
 
   return (
     <PaperProvider theme={paperTheme}>
       <NavigationContainer theme={navigationTheme}>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Navigator 
+          screenOptions={{ 
+            headerShown: false,
+          }}
+        >
           {user ? (
             <>
               <Stack.Group>
@@ -115,7 +132,10 @@ export const AppNavigator: React.FC = () => {
                   {({ navigation }) => <UpgradeScreen onBack={() => navigation.goBack()} />}
                 </Stack.Screen>
                 <Stack.Screen name="Account">
-                  {({ navigation }) => <AccountScreen onBack={() => navigation.goBack()} />}
+                  {({ navigation }) => <AccountScreen onBack={() => navigation.goBack()} onOpenAllAchievements={() => navigation.navigate('AllAchievements')} />}
+                </Stack.Screen>
+                <Stack.Screen name="AllAchievements">
+                  {({ navigation }) => <AllAchievementsScreen onBack={() => navigation.goBack()} />}
                 </Stack.Screen>
                 <Stack.Screen name="PublicFeed">
                   {({ navigation }) => (

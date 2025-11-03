@@ -4,7 +4,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import * as publicFeedRepository from '../db/repositories/publicFeedRepository.js';
 import { getStoryById } from '../db/repositories/storyRepository.js';
 import { getUserById } from '../db/repositories/userRepository.js';
-import { awardXp } from '../db/repositories/gamificationRepository.js';
+import { awardXp, getUserStats } from '../db/repositories/gamificationRepository.js';
 
 const router = Router();
 
@@ -170,6 +170,22 @@ router.delete(
 
     // TODO: Implement comment deletion (need commentRepository)
     res.status(501).json({ error: 'Not implemented' });
+  })
+);
+
+// Get theme unlocks based on user's current XP
+router.get(
+  '/themes/unlocks',
+  authenticate,
+  asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user!.id;
+    
+    // Get user's stats to retrieve total XP
+    const stats = getUserStats(userId);
+
+    // Get theme unlocks based on XP
+    const unlockedThemes = publicFeedRepository.getThemeUnlocks(stats.total_xp);
+    res.json(unlockedThemes);
   })
 );
 

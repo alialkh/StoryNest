@@ -8,7 +8,7 @@ import {
   getSharedStory,
   getRemainingStories
 } from '../services/storyService.js';
-import { updateStoryTitle } from '../db/repositories/storyRepository.js';
+import { updateStoryTitle, getStoryById } from '../db/repositories/storyRepository.js';
 
 export const storyRouter = Router();
 
@@ -59,6 +59,17 @@ storyRouter.get(
       return res.status(404).json({ message: 'Story not found' });
     }
     res.json({ story });
+  })
+);
+
+storyRouter.get(
+  '/:id',
+  asyncHandler(async (req, res) => {
+    const story = getStoryById(req.params.id);
+    if (!story) {
+      return res.status(404).json({ message: 'Story not found' });
+    }
+    res.json(story);
   })
 );
 

@@ -91,8 +91,24 @@ export const useAuthStore = create<AuthState>((set) => ({
       dependencies.setAuthToken?.(token);
       set({ user, token, loading: false });
     } catch (error) {
-      console.error(error);
-      set({ error: 'Unable to login. Check your credentials.', loading: false });
+      console.error('Login error:', error);
+      let errorMessage = 'Unable to login. Check your credentials.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Network')) {
+          errorMessage = 'Network error. Check your connection and API URL configuration.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Request timeout. Backend may be unreachable.';
+        } else if ((error as any).response?.data?.error) {
+          errorMessage = (error as any).response.data.error;
+        } else if ((error as any).response?.status === 401) {
+          errorMessage = 'Invalid email or password.';
+        } else if ((error as any).response?.status === 400) {
+          errorMessage = 'Please enter a valid email and password.';
+        }
+      }
+      
+      set({ error: errorMessage, loading: false });
     }
   },
   register: async (email, password) => {
@@ -106,8 +122,24 @@ export const useAuthStore = create<AuthState>((set) => ({
       dependencies.setAuthToken?.(token);
       set({ user, token, loading: false });
     } catch (error) {
-      console.error(error);
-      set({ error: 'Unable to register. Try a different email.', loading: false });
+      console.error('Register error:', error);
+      let errorMessage = 'Unable to register. Try a different email.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Network')) {
+          errorMessage = 'Network error. Check your connection and API URL configuration.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Request timeout. Backend may be unreachable.';
+        } else if ((error as any).response?.data?.error) {
+          errorMessage = (error as any).response.data.error;
+        } else if ((error as any).response?.status === 409) {
+          errorMessage = 'Email already registered. Try logging in instead.';
+        } else if ((error as any).response?.status === 400) {
+          errorMessage = 'Invalid email or password format.';
+        }
+      }
+      
+      set({ error: errorMessage, loading: false });
     }
   },
   logout: async () => {

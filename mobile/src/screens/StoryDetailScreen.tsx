@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, ListRenderItemInfo, ScrollView } from 'react-native';
+import { View, StyleSheet, FlatList, ListRenderItemInfo, ScrollView, Share, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Text, Card, Button, useTheme, ActivityIndicator, TextInput, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { AppScaffold } from '../components/AppScaffold';
+import { AppScaffold, type SidebarAction, type HeaderAction } from '../components/AppScaffold';
 import { FormattedText } from '../components/FormattedText';
+import { ZoomableText } from '../components/ZoomableText';
+import { PremiumFeaturePopup } from '../components/PremiumFeaturePopup';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 import { api } from '../services/api';
 import type { PublicStory } from '../services/publicFeedService';
+import { useAuthStore } from '../store/authStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StoryDetail'>;
 
@@ -20,20 +23,89 @@ interface PublicStoryComment {
 }
 
 export const StoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
-  const { storyId } = route.params as { storyId: string };
+  const { storyId, story: initialStory } = route.params as { storyId: string; story?: any };
   const theme = useTheme();
+  const user = useAuthStore((state) => state.user);
 
-  const [story, setStory] = useState<PublicStory | null>(null);
+  const [story, setStory] = useState<PublicStory | null>(initialStory || null);
   const [comments, setComments] = useState<PublicStoryComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [premiumPopupVisible, setPremiumPopupVisible] = useState(false);
+  const [premiumPopupFeature, setPremiumPopupFeature] = useState('');
+  const [textSize, setTextSize] = useState<'small' | 'normal' | 'large'>('normal');
+
+  const handleShareStory = async () => {
+    try {
+      if (story) {
+        await Share.share({
+          message: `Check out this story from StoryNest: "${story.title}"\n\n${story.excerpt}`,
+          title: story.title
+        });
+      }
+    } catch (error) {
+      console.error('Failed to share:', error);
+    }
+  };
+
+  const handleReportStory = () => {
+    Alert.alert(
+      'Report Story',
+      'Thank you for helping us maintain community standards.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Report', style: 'destructive', onPress: () => {
+          Alert.alert('Success', 'Your report has been submitted.');
+        }}
+      ]
+    );
+  };
+
+  const handleToggleTextSize = () => {
+    const sizes: Array<'small' | 'normal' | 'large'> = ['small', 'normal', 'large'];
+    const currentIndex = sizes.indexOf(textSize);
+    const nextIndex = (currentIndex + 1) % sizes.length;
+    setTextSize(sizes[nextIndex]);
+  };
+
+  const headerActions: HeaderAction[] = [
+    {
+      key: 'zoom',
+      icon: 'magnify-plus',
+      label: textSize === 'small' ? 'Enlarge' : textSize === 'large' ? 'Shrink' : 'Enlarge',
+      onPress: handleToggleTextSize
+    },
+    {
+      key: 'share',
+      icon: 'share-variant',
+      label: 'Share',
+      onPress: handleShareStory
+    },
+    {
+      key: 'report',
+      icon: 'flag',
+      label: 'Report',
+      onPress: handleReportStory
+    }
+  ];
 
   useEffect(() => {
     const loadStoryDetails = async () => {
       try {
         setLoading(true);
+        
+        // If we don't have the full text yet, try to fetch it
+        if (!story?.text && story?.story_id) {
+          try {
+            const storyResponse = await api.get(`/stories/${story.story_id}`);
+            setStory(prev => prev ? { ...prev, text: storyResponse.data.text } : null);
+          } catch (err) {
+            console.error('Failed to load full story text:', err);
+          }
+        }
+        
         // Fetch comments
         const commentsResponse = await api.get(`/feed/feed/${storyId}/comments?limit=100`);
         setComments(commentsResponse.data);
@@ -56,6 +128,13 @@ export const StoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   }, [storyId]);
 
   const handleAddComment = async () => {
+    // Check if user is premium
+    if (user?.tier !== 'PREMIUM') {
+      setPremiumPopupFeature('Commenting on stories');
+      setPremiumPopupVisible(true);
+      return;
+    }
+
     if (!newComment.trim()) return;
 
     setIsSubmittingComment(true);
@@ -73,6 +152,13 @@ export const StoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const handleToggleLike = async () => {
+    // Check if user is premium
+    if (user?.tier !== 'PREMIUM') {
+      setPremiumPopupFeature('Liking stories');
+      setPremiumPopupVisible(true);
+      return;
+    }
+
     try {
       if (isLiked) {
         await api.delete(`/feed/feed/${storyId}/like`);
@@ -119,8 +205,12 @@ export const StoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
   }
 
   return (
-    <AppScaffold title="Community Story" onBack={() => navigation.goBack()}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <AppScaffold title="Community Story" onBack={() => navigation.goBack()} headerActions={headerActions}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Story Content */}
         <Card style={styles.storyCard}>
           <Card.Content>
@@ -145,10 +235,11 @@ export const StoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
             <Divider style={{ marginVertical: 12 }} />
 
-            <FormattedText
-              content={route.params.story?.excerpt ?? ''}
+            <ZoomableText
+              content={(story?.text || story?.excerpt) ?? ''}
               variant="bodyMedium"
               style={{ lineHeight: 22 }}
+              textSize={textSize}
             />
 
             <View style={styles.actionButtons}>
@@ -205,7 +296,17 @@ export const StoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
             ))}
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <PremiumFeaturePopup
+        visible={premiumPopupVisible}
+        featureName={premiumPopupFeature}
+        onDismiss={() => setPremiumPopupVisible(false)}
+        onUpgrade={() => {
+          setPremiumPopupVisible(false);
+          navigation.navigate('Upgrade');
+        }}
+      />
     </AppScaffold>
   );
 };

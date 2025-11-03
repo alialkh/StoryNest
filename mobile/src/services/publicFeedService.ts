@@ -6,6 +6,7 @@ export interface PublicStory {
   user_id: string;
   title: string;
   excerpt: string;
+  text?: string;
   like_count: number;
   comment_count: number;
   shared_at: string;

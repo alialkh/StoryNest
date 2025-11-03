@@ -92,7 +92,22 @@ npm install
 expo start
 ```
 
-Configure the API origin in `mobile/app.json` (`expo.extra.apiUrl`). During development, run the backend locally on the same network and point to it (e.g., `http://192.168.1.15:4000`).
+#### API URL Configuration
+
+The mobile app needs to connect to the backend API. The URL is configured in `mobile/app.json` under `expo.extra.apiUrl`.
+
+**Current default:** `http://10.0.0.1:4000`
+
+Adjust based on your environment:
+
+- **Android Emulator (local dev):** `http://10.0.0.1:4000` (host machine's localhost)
+- **Physical Device (local dev):** `http://YOUR_COMPUTER_IP:4000` (e.g., `http://192.168.1.100:4000`)
+  - Find your IP: Run `ipconfig` (Windows) or `ifconfig` (Mac/Linux)
+- **Production Build:** Update to your deployed backend URL (e.g., `https://api.storynest.com`)
+
+**⚠️ IMPORTANT:** Remember to update `mobile/app.json` before building for production!
+
+Also update the fallback URL in `mobile/src/services/api.ts` (line 7) to match your production URL.
 
 ### Highlights
 

@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Divider, IconButton, List, Modal, Portal, Surface, Switch, Text, useTheme } from 'react-native-paper';
+import React, { useState, useMemo, useCallback } from 'react';
+import { StyleSheet, View, Pressable } from 'react-native';
+import { Divider, IconButton, List, Modal, Portal, Surface, Switch, Text, useTheme, Menu } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeStore } from '../store/themeStore';
+import { useAuthStore } from '../store/authStore';
+import { useGamificationStore } from '../store/gamificationStore';
 import { EnchantedBackground } from './EnchantedBackground';
 import { BottomBar } from './BottomBar';
+import { THEMES } from '../theme/themes';
 
 export interface SidebarAction {
+  key: string;
+  icon: string;
+  label: string;
+  onPress: () => void;
+}
+
+export interface HeaderAction {
   key: string;
   icon: string;
   label: string;
@@ -18,18 +28,36 @@ interface Props {
   subtitle?: string;
   onBack?: () => void;
   sidebarActions?: SidebarAction[];
+  headerActions?: HeaderAction[];
   children: React.ReactNode;
 }
 
-export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack, sidebarActions }) => {
+export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack, sidebarActions, headerActions }) => {
   const theme = useTheme();
   const mode = useThemeStore((state) => state.mode);
+  const colorTheme = useThemeStore((state) => state.colorTheme);
   const toggleMode = useThemeStore((state) => state.toggleMode);
+  const setColorTheme = useThemeStore((state) => state.setColorTheme);
+  const stats = useGamificationStore((state) => state.stats);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
-  const handleToggleTheme = () => {
+  // Calculate user's XP for theme unlocking
+  const userXp = stats?.total_xp ?? 0;
+  
+  // Filter themes based on XP
+  const unlockedThemes = useMemo(() => {
+    return Object.values(THEMES).filter(t => t.unlocksAtXp <= userXp);
+  }, [userXp]);
+
+  const handleToggleTheme = useCallback(() => {
     void toggleMode();
-  };
+  }, [toggleMode]);
+
+  const handleSelectTheme = useCallback((themeId: string) => {
+    void setColorTheme(themeId as any);
+    setMenuVisible(false);
+  }, [setColorTheme]);
 
   const actions = sidebarActions ?? [];
 
@@ -56,11 +84,10 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
             ) : null}
           </View>
           <IconButton
-            icon={mode === 'dark' ? 'weather-night' : 'white-balance-sunny'}
+            icon="dots-horizontal"
             size={22}
             mode="contained-tonal"
-            onPress={handleToggleTheme}
-            accessibilityLabel="Toggle color scheme"
+            onPress={() => setMenuVisible(true)}
           />
         </Surface>
         <Divider style={[styles.divider, { backgroundColor: theme.colors.outline, opacity: 0.2 }]} />
@@ -97,24 +124,79 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
                 />
               ))}
             </List.Section>
-            <Divider style={{ marginHorizontal: 24, opacity: 0.3 }} />
+          </Surface>
+        </Modal>
+        <Modal
+          visible={menuVisible}
+          onDismiss={() => setMenuVisible(false)}
+          contentContainerStyle={styles.menuModalContainer}
+        >
+          <Pressable 
+            style={StyleSheet.absoluteFill} 
+            onPress={() => setMenuVisible(false)}
+          />
+          <Surface style={[styles.menuPopup, { backgroundColor: theme.colors.surface }]} elevation={2}>
+            {headerActions && headerActions.length > 0 && (
+              <>
+                <List.Section style={styles.listSection}>
+                  <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>Actions</List.Subheader>
+                  {headerActions.map((action) => (
+                    <List.Item
+                      key={action.key}
+                      title={action.label}
+                      titleStyle={{ color: theme.colors.onSurface }}
+                      left={(props) => <List.Icon {...props} icon={action.icon} color={theme.colors.primary} />}
+                      onPress={() => {
+                        setMenuVisible(false);
+                        action.onPress();
+                      }}
+                    />
+                  ))}
+                </List.Section>
+                <Divider style={{ marginVertical: 4 }} />
+              </>
+            )}
             <List.Section style={styles.listSection}>
-              <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>Appearance</List.Subheader>
+              <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>Display</List.Subheader>
               <List.Item
-                title={mode === 'dark' ? 'Dark mode' : 'Light mode'}
-                description="Switch between cozy night hues and bright daylight."
+                title={mode === 'dark' ? 'Light mode' : 'Dark mode'}
                 titleStyle={{ color: theme.colors.onSurface }}
-                descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
                 left={(props) => (
-                  <List.Icon
-                    {...props}
-                    icon={mode === 'dark' ? 'weather-night' : 'white-balance-sunny'}
-                    color={theme.colors.tertiary}
+                  <List.Icon 
+                    {...props} 
+                    icon={mode === 'dark' ? 'white-balance-sunny' : 'weather-night'} 
+                    color={theme.colors.primary}
                   />
                 )}
-                right={() => <Switch value={mode === 'dark'} onValueChange={handleToggleTheme} />}
-                onPress={handleToggleTheme}
+                onPress={() => {
+                  handleToggleTheme();
+                  setMenuVisible(false);
+                }}
               />
+            </List.Section>
+            <Divider style={{ marginVertical: 4 }} />
+            <List.Section style={styles.listSection}>
+              <List.Subheader style={{ color: theme.colors.onSurfaceVariant }}>Themes</List.Subheader>
+              {Object.values(THEMES).map((t) => {
+                const isUnlocked = t.unlocksAtXp <= userXp;
+                return (
+                  <List.Item
+                    key={t.id}
+                    title={`${t.name}${isUnlocked ? '' : ` (Unlock at ${t.unlocksAtXp} XP)`}`}
+                    titleStyle={{ color: theme.colors.onSurface, opacity: isUnlocked ? 1 : 0.6 }}
+                    left={(props) => (
+                      <List.Icon 
+                        {...props} 
+                        icon={isUnlocked ? 'palette' : 'lock'} 
+                        color={isUnlocked ? theme.colors.primary : theme.colors.outline}
+                      />
+                    )}
+                    right={() => colorTheme === t.id ? <List.Icon icon="check" color={theme.colors.primary} /> : undefined}
+                    onPress={() => isUnlocked && handleSelectTheme(t.id)}
+                    disabled={!isUnlocked}
+                  />
+                );
+              })}
             </List.Section>
           </Surface>
         </Modal>
@@ -160,6 +242,18 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     justifyContent: 'flex-start'
+  },
+  menuModalContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    flex: 1
+  },
+  menuPopup: {
+    borderRadius: 24,
+    paddingVertical: 8,
+    overflow: 'hidden',
+    maxWidth: '85%',
+    maxHeight: '80%'
   },
   sidebar: {
     marginHorizontal: 24,

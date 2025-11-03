@@ -141,13 +141,13 @@ CREATE TABLE IF NOT EXISTS theme_unlocks (
 );
 
 INSERT OR IGNORE INTO theme_unlocks (theme_id, theme_name, xp_threshold) VALUES
-('default', 'Default (Light)', 0),
-('dark-professional', 'Dark Professional', 100),
-('ocean-breeze', 'Ocean Breeze', 250),
-('forest-night', 'Forest Night', 500),
-('sunset-glow', 'Sunset Glow', 1000),
-('neon-cyber', 'Neon Cyber', 2500),
-('cosmic-infinity', 'Cosmic Infinity', 5000);
+('default', 'Enchanted', 0),
+('forest', 'Forest', 100),
+('lava', 'Lava', 250),
+('ocean', 'Ocean', 500),
+('twilight', 'Twilight', 750),
+('sunset', 'Sunset', 1000),
+('midnight', 'Midnight', 2500);
 
 CREATE TABLE IF NOT EXISTS login_streaks (
   user_id TEXT PRIMARY KEY,

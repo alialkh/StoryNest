@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, SegmentedButtons, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GenreTile } from '../components/GenreTile';
@@ -26,6 +26,8 @@ export const NewStoryWizard: React.FC<Props> = ({ onCancel, onSubmit, disabled, 
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [selectedTone, setSelectedTone] = useState<ToneOption | null>(null);
   const [selectedArchetype, setSelectedArchetype] = useState<ArchetypeOption | null>(null);
+  const [customArchetype, setCustomArchetype] = useState('');
+  const [isCustomArchetypeMode, setIsCustomArchetypeMode] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [error, setError] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -48,6 +50,16 @@ export const NewStoryWizard: React.FC<Props> = ({ onCancel, onSubmit, disabled, 
 
   const handleArchetypeSelect = (archetype: string) => {
     setSelectedArchetype(archetype as ArchetypeOption);
+    setCustomArchetype('');
+    setStep('prompt');
+  };
+
+  const handleCustomArchetypeSubmit = () => {
+    if (!customArchetype.trim()) {
+      setError('Please describe your character archetype.');
+      return;
+    }
+    setSelectedArchetype(null);
     setStep('prompt');
   };
 
@@ -63,7 +75,7 @@ export const NewStoryWizard: React.FC<Props> = ({ onCancel, onSubmit, disabled, 
         prompt: prompt.trim(),
         genre: selectedGenre,
         tone: selectedTone,
-        archetype: selectedArchetype
+        archetype: customArchetype.trim() || selectedArchetype
       });
       // Hide loading modal after 1 second to show success state
       setTimeout(() => {
@@ -93,6 +105,11 @@ export const NewStoryWizard: React.FC<Props> = ({ onCancel, onSubmit, disabled, 
           Step {progressText}
         </Text>
       </View>
+
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
 
       {/* Genre Step */}
       {currentStep === 'genre' && (
@@ -168,21 +185,62 @@ export const NewStoryWizard: React.FC<Props> = ({ onCancel, onSubmit, disabled, 
             </Text>
           </Surface>
 
-          <View style={styles.archetypeGrid}>
-            {archetypes.map((archetype) => (
+          {!isCustomArchetypeMode ? (
+            <>
+              <View style={styles.archetypeGrid}>
+                {archetypes.map((archetype) => (
+                  <Button
+                    key={archetype}
+                    mode={selectedArchetype === archetype ? 'contained' : 'outlined'}
+                    onPress={() => handleArchetypeSelect(archetype)}
+                    style={[
+                      styles.archetypeButton,
+                      selectedArchetype === archetype && { backgroundColor: selectedGenreTheme.color }
+                    ]}
+                  >
+                    {archetype}
+                  </Button>
+                ))}
+              </View>
               <Button
-                key={archetype}
-                mode={selectedArchetype === archetype ? 'contained' : 'outlined'}
-                onPress={() => handleArchetypeSelect(archetype)}
-                style={[
-                  styles.archetypeButton,
-                  selectedArchetype === archetype && { backgroundColor: selectedGenreTheme.color }
-                ]}
+                mode="text"
+                onPress={() => setIsCustomArchetypeMode(true)}
+                icon="pencil"
+                style={styles.customArchetypeToggle}
               >
-                {archetype}
+                Create Custom Archetype
               </Button>
-            ))}
-          </View>
+            </>
+          ) : (
+            <>
+              <TextInput
+                label="Describe your character archetype"
+                value={customArchetype}
+                onChangeText={(t) => {
+                  setCustomArchetype(t);
+                  setError('');
+                }}
+                mode="outlined"
+                multiline
+                numberOfLines={3}
+                style={styles.promptInput}
+                placeholder="E.g., 'A cynical detective with a secret past' or 'A magical forest creature'"
+              />
+              {error ? (
+                <Text style={[styles.error, { color: theme.colors.error }]}>{error}</Text>
+              ) : null}
+              <Button
+                mode="text"
+                onPress={() => {
+                  setIsCustomArchetypeMode(false);
+                  setCustomArchetype('');
+                  setError('');
+                }}
+              >
+                ← Back to Presets
+              </Button>
+            </>
+          )}
         </ScrollView>
       )}
 
@@ -224,6 +282,7 @@ export const NewStoryWizard: React.FC<Props> = ({ onCancel, onSubmit, disabled, 
           )}
         </ScrollView>
       )}
+      </KeyboardAvoidingView>
 
       {/* Footer Buttons */}
       <View style={styles.footer}>
@@ -244,13 +303,17 @@ export const NewStoryWizard: React.FC<Props> = ({ onCancel, onSubmit, disabled, 
             currentStep === 'tone'
               ? () => setStep('archetype')
               : currentStep === 'archetype'
-                ? () => setStep('prompt')
+                ? customArchetype.trim()
+                  ? handleCustomArchetypeSubmit
+                  : selectedArchetype
+                    ? () => setStep('prompt')
+                    : undefined
                 : currentStep === 'prompt'
                   ? handlePromptSubmit
                   : undefined
           }
           disabled={
-            currentStep === 'genre' || disabled || (currentStep === 'prompt' && !prompt.trim())
+            currentStep === 'genre' || disabled || (currentStep === 'prompt' && !prompt.trim()) || (currentStep === 'archetype' && !selectedArchetype && !customArchetype.trim())
           }
           icon={currentStep === 'prompt' ? 'auto-fix' : 'arrow-right'}
         >
@@ -271,20 +334,22 @@ const styles = StyleSheet.create({
     gap: 4
   },
   genreGrid: {
-    flex: 1,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    justifyContent: 'flex-start'
+    justifyContent: 'flex-start',
+    flexGrow: 1
   },
   toneContainer: {
     paddingHorizontal: 24,
     paddingVertical: 24,
-    gap: 20
+    gap: 20,
+    flexGrow: 1
   },
   archetypeContainer: {
     paddingHorizontal: 24,
     paddingVertical: 24,
-    gap: 20
+    gap: 20,
+    flexGrow: 1
   },
   genreBadge: {
     paddingVertical: 16,
@@ -309,10 +374,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     width: '45%'
   },
+  customArchetypeToggle: {
+    marginTop: 12,
+    alignSelf: 'center'
+  },
   promptContainer: {
     paddingHorizontal: 24,
     paddingVertical: 24,
-    gap: 16
+    gap: 16,
+    flexGrow: 1
   },
   promptInput: {
     backgroundColor: 'transparent'

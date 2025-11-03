@@ -22,25 +22,29 @@ export const ShareStoryDialog: React.FC<ShareStoryDialogProps> = ({
   onDismiss
 }) => {
   const [error, setError] = useState<string | null>(null);
+  const [isDailyLimitError, setIsDailyLimitError] = useState(false);
 
   const handleShare = async () => {
     if (!story) return;
     try {
       setError(null);
+      setIsDailyLimitError(false);
       await onShare(story);
       onDismiss();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to share story';
+      const isDailyLimit = message.includes('1 story per day') || message.includes('daily');
+      setIsDailyLimitError(isDailyLimit);
       setError(message);
     }
   };
 
   return (
     <Portal>
-      <Dialog visible={visible} onDismiss={onDismiss}>
+      <Dialog visible={visible} onDismiss={onDismiss} style={styles.dialog}>
         <Dialog.Title>Share to Public Feed</Dialog.Title>
 
-        <Dialog.ScrollArea>
+        <Dialog.Content style={styles.dialogContent}>
           {isLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator animating={true} size="large" />
@@ -60,25 +64,43 @@ export const ShareStoryDialog: React.FC<ShareStoryDialogProps> = ({
             </View>
           ) : (
             <View style={styles.contentContainer}>
-              <MaterialCommunityIcons name="share-variant" size={48} color="#4CAF50" />
-              <Text variant="bodyMedium" style={styles.shareText}>
-                Share "{story?.title || 'Untitled'}" to the public feed?
-              </Text>
-              <Text variant="bodySmall" style={styles.xpText}>
-                You'll earn +50 XP and reach more readers!
-              </Text>
-              {error && (
-                <Text variant="bodySmall" style={styles.errorText}>
-                  {error}
-                </Text>
+              {error ? (
+                <>
+                  <MaterialCommunityIcons 
+                    name={isDailyLimitError ? 'clock-alert' : 'alert-circle'} 
+                    size={48} 
+                    color={isDailyLimitError ? '#FF9800' : '#F44336'} 
+                  />
+                  <Text variant="headlineSmall" style={[styles.title, { color: isDailyLimitError ? '#FF9800' : '#F44336' }]}>
+                    {isDailyLimitError ? 'Daily Limit Reached' : 'Unable to Share'}
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.description}>
+                    {isDailyLimitError 
+                      ? 'You can share 1 story per day. Come back tomorrow to share another one!'
+                      : error}
+                  </Text>
+                  <Text variant="bodySmall" style={styles.xpText}>
+                    💡 Keep creating stories to build your audience!
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="share-variant" size={48} color="#4CAF50" />
+                  <Text variant="bodyMedium" style={styles.shareText}>
+                    Share "{story?.title || 'Untitled'}" to the public feed?
+                  </Text>
+                  <Text variant="bodySmall" style={styles.xpText}>
+                    You'll earn +50 XP and reach more readers!
+                  </Text>
+                </>
               )}
             </View>
           )}
-        </Dialog.ScrollArea>
+        </Dialog.Content>
 
         <Dialog.Actions>
-          <Button onPress={onDismiss}>Cancel</Button>
-          {isPremium && (
+          <Button onPress={onDismiss}>{error ? 'Got it' : 'Cancel'}</Button>
+          {isPremium && !error && (
             <Button
               mode="contained"
               onPress={handleShare}
@@ -98,6 +120,12 @@ export const ShareStoryDialog: React.FC<ShareStoryDialogProps> = ({
 };
 
 const styles = StyleSheet.create({
+  dialog: {
+    borderRadius: 8,
+  },
+  dialogContent: {
+    paddingHorizontal: 12,
+  },
   loadingContainer: {
     alignItems: 'center',
     justifyContent: 'center',

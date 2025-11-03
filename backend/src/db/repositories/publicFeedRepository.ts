@@ -10,6 +10,7 @@ export interface PublicStory {
   like_count: number;
   comment_count: number;
   shared_at: string;
+  text?: string;
 }
 
 export interface PublicStoryLike {
@@ -95,7 +96,21 @@ export const shareStoryPublic = (
     `);
     updateLimitStmt.run(userId, today, today, today, today);
 
-    const getStmt = db.prepare('SELECT * FROM public_stories WHERE id = ?');
+    const getStmt = db.prepare(`
+      SELECT 
+        ps.id,
+        ps.story_id,
+        ps.user_id,
+        ps.title,
+        ps.excerpt,
+        s.content as text,
+        ps.like_count,
+        ps.comment_count,
+        ps.shared_at
+      FROM public_stories ps
+      LEFT JOIN stories s ON ps.story_id = s.id
+      WHERE ps.id = ?
+    `);
     return getStmt.get(id) as PublicStory;
   } catch (err) {
     console.error('Error sharing story:', err);
@@ -106,8 +121,19 @@ export const shareStoryPublic = (
 // Get public feed (paginated)
 export const getPublicFeed = (limit: number = 20, offset: number = 0): PublicStory[] => {
   const stmt = db.prepare(`
-    SELECT * FROM public_stories
-    ORDER BY shared_at DESC
+    SELECT 
+      ps.id,
+      ps.story_id,
+      ps.user_id,
+      ps.title,
+      ps.excerpt,
+      s.content as text,
+      ps.like_count,
+      ps.comment_count,
+      ps.shared_at
+    FROM public_stories ps
+    LEFT JOIN stories s ON ps.story_id = s.id
+    ORDER BY ps.shared_at DESC
     LIMIT ? OFFSET ?
   `);
   return stmt.all(limit, offset) as PublicStory[];

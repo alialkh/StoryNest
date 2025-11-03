@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, View, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { Button, Menu, Surface, Text, TextInput, useTheme, SegmentedButtons, IconButton } from 'react-native-paper';
 import { stripSuggestion, extractSuggestion } from '../utils/text';
 import { getGenreTheme } from '../theme/genreBackgrounds';
 import { useStoryStore } from '../store/storyStore';
 import type { Story } from '../types';
-import { AppScaffold } from '../components/AppScaffold';
+import { AppScaffold, type HeaderAction } from '../components/AppScaffold';
 import { FormattedText } from '../components/FormattedText';
+import { ZoomableText } from '../components/ZoomableText';
 import { useThemeStore } from '../store/themeStore';
 
 interface Props {
@@ -84,15 +85,32 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
   };
 
   return (
-    <AppScaffold title="Continue the tale" subtitle="Add a prompt or let StoryNest improvise the next chapter" onBack={onBack}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Story Title with Menu */}
+    <AppScaffold 
+      title={parts[0]?.title || 'Story'} 
+      subtitle="Continue your tale" 
+      onBack={onBack}
+      headerActions={[
+        {
+          key: 'edit-title',
+          icon: 'pencil',
+          label: 'Edit title',
+          onPress: () => setEditingTitle(!editingTitle)
+        }
+      ]}
+    >
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Story Title Editing - Hidden, Moved to Header */}
         {editingTitle ? (
           <TextInput
             style={styles.titleInput}
             value={titleText}
             onChangeText={setTitleText}
             placeholder="Edit title..."
+            mode="outlined"
             onBlur={() => {
               if (titleText && titleText !== story?.title) {
                 updateStoryTitle(story!.id, titleText);
@@ -100,51 +118,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
               setEditingTitle(false);
             }}
           />
-        ) : (
-          <View style={styles.titleWithMenuContainer}>
-            <Pressable onPress={() => setEditingTitle(true)} style={{ flex: 1 }}>
-              <Surface
-                style={[styles.titleCard, { backgroundColor: theme.colors.primaryContainer }]}
-                elevation={2}
-              >
-                <View style={styles.titleContent}>
-                  <View style={{ flex: 1 }}>
-                    <Text variant="headlineSmall" style={{ color: theme.colors.onPrimaryContainer }}>
-                      {parts[0]?.title || 'Untitled Story'}
-                    </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.7, marginTop: 4 }}>
-                      Tap to edit
-                    </Text>
-                  </View>
-                  <Menu
-                    visible={menuVisible}
-                    onDismiss={() => setMenuVisible(false)}
-                    anchor={
-                      <IconButton
-                        icon="menu"
-                        onPress={() => setMenuVisible(true)}
-                        iconColor={theme.colors.onPrimaryContainer}
-                      />
-                    }
-                  >
-                    <Surface style={{ padding: 12 }}>
-                      <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>Background theme</Text>
-                      <SegmentedButtons
-                        value={themeMode}
-                        onValueChange={(value) => void useThemeStore.getState().setMode?.(value as 'light' | 'dark')}
-                        buttons={[
-                          { value: 'light', label: 'Light', icon: 'white-balance-sunny' },
-                          { value: 'dark', label: 'Dark', icon: 'weather-night' }
-                        ]}
-                        style={{ marginTop: 8 }}
-                      />
-                    </Surface>
-                  </Menu>
-                </View>
-              </Surface>
-            </Pressable>
-          </View>
-        )}
+        ) : null}
 
         {/* Story Parts */}
         {parts.map((part, idx) => (
@@ -152,7 +126,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
             <Text variant="labelSmall" style={{ color: theme.colors.primary }}>
               {idx === 0 ? (part.prompt || 'Original prompt') : (part.prompt || 'Continuation')}
             </Text>
-            <FormattedText 
+            <ZoomableText 
               content={stripSuggestion(part.content)} 
               variant="bodyMedium" 
               style={[styles.original, { color: theme.colors.onSurface }]}
@@ -160,7 +134,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
           </Surface>
         ))}
         <TextInput
-          label="Direction for the next part"
+          label="Next chapter direction (optional)"
           value={prompt}
           onChangeText={setPrompt}
           mode="outlined"
@@ -181,6 +155,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
           </Button>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </AppScaffold>
   );
 };
@@ -210,7 +185,8 @@ const styles = StyleSheet.create({
   },
   titleInput: {
     backgroundColor: 'transparent',
-    marginHorizontal: 16
+    marginHorizontal: 16,
+    marginBottom: 12
   },
   originalCard: {
     borderRadius: 24,

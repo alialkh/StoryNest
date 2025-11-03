@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, Chip, ProgressBar, Surface, Text, useTheme, ActivityIndicator } from 'react-native-paper';
 import { useAuthStore } from '../store/authStore';
 import { useGamificationStore } from '../store/gamificationStore';
+import { ThemeSelector } from '../components/ThemeSelector';
 import { AppScaffold } from '../components/AppScaffold';
 
 // Simple relative time formatter
@@ -27,9 +28,11 @@ const formatRelativeTime = (dateString: string | null): string => {
 
 interface Props {
   onBack: () => void;
+  onOpenAllAchievements?: () => void;
+  onUpgrade?: () => void;
 }
 
-export const AccountScreen: React.FC<Props> = ({ onBack }) => {
+export const AccountScreen: React.FC<Props> = ({ onBack, onOpenAllAchievements, onUpgrade }) => {
   const theme = useTheme();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
@@ -68,7 +71,7 @@ export const AccountScreen: React.FC<Props> = ({ onBack }) => {
         <Surface style={[styles.section, { backgroundColor: theme.colors.primaryContainer }]} elevation={2}>
           <View style={styles.profileHeader}>
             <View style={{ flex: 1 }}>
-              <Text variant="displaySmall" style={{ color: theme.colors.onPrimaryContainer, marginBottom: 8 }}>
+              <Text variant="displaySmall" style={{ color: theme.colors.onPrimaryContainer, marginBottom: 8 }} onPress={() => onUpgrade?.()}>
                 {user?.email}
               </Text>
               <Chip
@@ -198,7 +201,20 @@ export const AccountScreen: React.FC<Props> = ({ onBack }) => {
               ))}
             </View>
           )}
+          {onOpenAllAchievements && (
+            <Button
+              mode="text"
+              onPress={onOpenAllAchievements}
+              icon="trophy"
+              style={{ marginTop: 12 }}
+            >
+              View All Achievements
+            </Button>
+          )}
         </Surface>
+
+        {/* Theme Progression */}
+        <ThemeSelector />
 
         {/* Actions */}
         <Surface style={[styles.section, { backgroundColor: theme.colors.errorContainer }]} elevation={1}>

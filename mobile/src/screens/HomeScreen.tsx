@@ -88,7 +88,7 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
   const sidebarActions: SidebarAction[] = [
     {
       key: 'public-feed',
-      icon: 'globe',
+      icon: 'earth',
       label: 'Community Feed',
       onPress: onOpenPublicFeed
     },
@@ -148,7 +148,7 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
           {stats && (
             <View style={styles.gamificationRow}>
               <Chip
-                icon="flame"
+                icon="fire"
                 style={{ backgroundColor: theme.colors.tertiaryContainer }}
                 textStyle={{ color: theme.colors.onTertiaryContainer }}
               >
@@ -169,6 +169,42 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
                 {stats.total_stories} Stories
               </Chip>
             </View>
+          )}
+
+          {/* Premium Upgrade Banner */}
+          {user?.tier !== 'PREMIUM' && (
+            <Surface
+              style={[
+                styles.premiumBanner,
+                { backgroundColor: theme.colors.secondaryContainer }
+              ]}
+              elevation={2}
+            >
+              <View style={styles.premiumBannerContent}>
+                <Text
+                  variant="labelLarge"
+                  style={{ color: theme.colors.onSecondaryContainer, fontWeight: '600', marginBottom: 8 }}
+                >
+                  👑 Unlock Premium
+                </Text>
+                <Text
+                  variant="bodySmall"
+                  style={{ color: theme.colors.onSecondaryContainer, opacity: 0.9, marginBottom: 12 }}
+                >
+                  Unlimited daily stories, advanced features, and more.
+                </Text>
+                <Button
+                  mode="contained"
+                  buttonColor={theme.colors.secondary}
+                  textColor={theme.colors.onSecondary}
+                  onPress={onUpgrade}
+                  icon="crown"
+                  compact
+                >
+                  Upgrade Now
+                </Button>
+              </View>
+            </Surface>
           )}
 
           {/* Daily Quota Display */}
@@ -197,7 +233,7 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
 
           <Button
             mode="contained"
-            icon="sparkles"
+            icon="star"
             onPress={onCreateStory}
             style={styles.primaryCTA}
             labelStyle={{ fontSize: 16, paddingVertical: 8 }}
@@ -231,7 +267,7 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
           </View>
           {loading && stories.length === 0 ? <ActivityIndicator animating /> : null}
           {latest ? (
-            <StoryCard story={latest} onContinue={onContinueStory} onShare={handleShare} isLatest />
+            <StoryCard story={latest} onContinue={onContinueStory} onShare={handleShare} onViewFull={onContinueStory} isLatest />
           ) : (
             <View style={styles.emptyStateContainer}>
               <Text variant="displaySmall" style={{ fontSize: 48, marginBottom: 12, textAlign: 'center' }}>
@@ -245,7 +281,7 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
               </Text>
               <Button
                 mode="contained-tonal"
-                icon="sparkles"
+                icon="star"
                 onPress={onCreateStory}
                 style={{ marginTop: 16 }}
               >
@@ -255,7 +291,7 @@ export const HomeScreen: React.FC<Props> = ({ onContinueStory, onOpenLibrary, on
           )}
         </Surface>
         {rootStories.slice(1, 3).map((story) => (
-          <StoryCard key={story.id} story={story} onContinue={onContinueStory} onShare={handleShare} />
+          <StoryCard key={story.id} story={story} onContinue={onContinueStory} onShare={handleShare} onViewFull={onContinueStory} />
         ))}
         {rootStories.length > 3 ? (
           <Button mode="outlined" onPress={onOpenLibrary} style={styles.showAllButton} icon="book-open-page-variant">
@@ -328,6 +364,15 @@ const styles = StyleSheet.create({
     gap: 8,
     flexWrap: 'wrap',
     marginTop: 8
+  },
+  premiumBanner: {
+    padding: 16,
+    borderRadius: 16,
+    marginVertical: 12
+  },
+  premiumBannerContent: {
+    flexDirection: 'column',
+    gap: 8
   },
   quotaSection: {
     backgroundColor: 'rgba(255,255,255,0.15)',
