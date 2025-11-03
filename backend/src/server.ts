@@ -20,8 +20,8 @@ interface RateLimitEntry {
 }
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
-const RATE_LIMIT_WINDOW = 250; // milliseconds
-const RATE_LIMIT_MAX_REQUESTS = 1; // 1 request per 250ms
+const RATE_LIMIT_WINDOW = 100; // milliseconds
+const RATE_LIMIT_MAX_REQUESTS = 2; // 2 requests per 100ms
 
 app.use((req, res, next) => {
   // Get client IP address

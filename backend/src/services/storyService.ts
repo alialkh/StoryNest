@@ -85,7 +85,7 @@ Prompt for the next chapter: ${prompt}`
     .join('\n');
 
   return {
-    system: `You are an award-winning creative writer who crafts short, vivid 400-word stories that end with a twist or emotional conclusion.
+    system: `You are an award-winning creative writer who crafts short, vivid 200-400 word stories that end with a twist or emotional conclusion.
     Your task is to generate a short story from a prompt that you are provided with.
     You operate within a system where a user will provide you with a prompt, genre, tone, and character archetype, and you will produce a short story, or build from a previous story.
     
