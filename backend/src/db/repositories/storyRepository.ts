@@ -6,6 +6,7 @@ export interface CreateStoryInput {
   userId: string;
   prompt: string;
   content: string;
+  title?: string | null;
   genre?: string | null;
   tone?: string | null;
   continuedFromId?: string | null;
@@ -15,6 +16,7 @@ export const createStory = ({
   userId,
   prompt,
   content,
+  title = null,
   genre = null,
   tone = null,
   continuedFromId = null
@@ -22,10 +24,10 @@ export const createStory = ({
   const id = randomUUID();
   const wordCount = content.split(/\s+/).filter(Boolean).length;
   const stmt = db.prepare(
-    `INSERT INTO stories (id, user_id, prompt, content, genre, tone, continued_from_id, word_count)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO stories (id, user_id, prompt, content, title, genre, tone, continued_from_id, word_count)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   );
-  stmt.run(id, userId, prompt, content, genre, tone, continuedFromId, wordCount);
+  stmt.run(id, userId, prompt, content, title, genre, tone, continuedFromId, wordCount);
   return getStoryById(id)!;
 };
 
@@ -51,5 +53,11 @@ export const getStoryByShareId = (shareId: string): Story | null => {
 export const assignShareId = (id: string, shareId: string): Story | null => {
   const stmt = db.prepare('UPDATE stories SET share_id = ? WHERE id = ?');
   stmt.run(shareId, id);
+  return getStoryById(id);
+};
+
+export const updateStoryTitle = (id: string, title: string): Story | null => {
+  const stmt = db.prepare('UPDATE stories SET title = ? WHERE id = ?');
+  stmt.run(title, id);
   return getStoryById(id);
 };

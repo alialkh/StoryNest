@@ -4,6 +4,7 @@ import { Divider, IconButton, List, Modal, Portal, Surface, Switch, Text, useThe
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useThemeStore } from '../store/themeStore';
 import { EnchantedBackground } from './EnchantedBackground';
+import { BottomBar } from './BottomBar';
 
 export interface SidebarAction {
   key: string;
@@ -64,6 +65,7 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
         </Surface>
         <Divider style={[styles.divider, { backgroundColor: theme.colors.outline, opacity: 0.2 }]} />
         <View style={styles.body}>{children}</View>
+        <BottomBar />
       </SafeAreaView>
       <Portal>
         <Modal
@@ -153,7 +155,7 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingBottom: 88,
     paddingTop: 16
   },
   modalContainer: {
@@ -161,7 +163,7 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     marginHorizontal: 24,
-    marginTop: 80,
+    marginTop: 0,
     borderRadius: 28,
     paddingVertical: 16,
     overflow: 'hidden'

@@ -28,7 +28,7 @@ StoryNest pairs a TypeScript/Express API backed by SQLite with an Expo-managed R
 
 ```
 .
-├── backend/              # Express server, SQLite access layer, OpenAI + Stripe integrations
+├── backend/              # Express server, SQLite access layer, Gemini + Stripe integrations
 │   ├── src/
 │   │   ├── config/       # Environment resolution
 │   │   ├── db/           # SQLite schema + repositories (better-sqlite3)
@@ -49,7 +49,7 @@ StoryNest pairs a TypeScript/Express API backed by SQLite with an Expo-managed R
 
 ## Tech Stack Snapshot
 
-- **Backend**: Node.js 20+, Express 4, TypeScript 5, better-sqlite3 for persistence, Zod validation, JWT auth, OpenAI SDK, Stripe SDK.
+- **Backend**: Node.js 20+, Express 4, TypeScript 5, better-sqlite3 for persistence, Zod validation, JWT auth, Google Gemini SDK, Stripe SDK.
 - **Mobile**: Expo SDK 54, React Native 0.74, React Native Paper (MD3), React Navigation 6, Zustand state stores, Axios networking, React Native Testing Library via Node test runner build artifacts.
 - **Tooling**: ESM modules throughout, ESLint (typescript-eslint) in both packages, tsx for backend dev, Expo CLI for mobile, node --test for mobile unit tests.
 
@@ -66,7 +66,7 @@ StoryNest pairs a TypeScript/Express API backed by SQLite with an Expo-managed R
 
 ```bash
 cd backend
-cp .env.example .env   # configure secrets like JWT_SECRET, OPENAI_API_KEY, STRIPE_SECRET_KEY
+cp .env.example .env   # configure secrets like JWT_SECRET, GEMINI_API_KEY, STRIPE_SECRET_KEY
 npm install
 npm run dev            # launches tsx watcher on src/server.ts
 ```
@@ -133,7 +133,7 @@ Configure the backend origin in `mobile/app.json` (`expo.extra.apiUrl`). For loc
 ## Performance & UX Considerations
 
 - Use memoization hooks (`useMemo`, `useCallback`) when passing callbacks into deeply nested Paper components to avoid unnecessary renders, especially inside `FlatList` delegates like `StoryCard`.
-- On backend story generation, `callOpenAI` already falls back to a deterministic tale when offline—preserve this behaviour for deterministic tests.
+- On backend story generation, the generator already falls back to a deterministic tale when offline—preserve this behaviour for deterministic tests.
 - When adding new modals or overlays, integrate them into `AppScaffold`’s Portal layer to keep the blur/gradient background consistent.
 - Keep the light/dark palettes cohesive: update `createPaperTheme.ts` for global changes rather than hardcoding colours within components.
 

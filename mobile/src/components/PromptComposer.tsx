@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button, HelperText, SegmentedButtons, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { generateNewSuggestion } from '../utils/text';
 
 type Mode = 'standard' | 'continuation';
 
@@ -9,10 +10,11 @@ interface Props {
   disabled?: boolean;
   remaining?: number | null;
   onModeChange?: (mode: Mode) => void;
+  suggestion?: string | null;
 }
 
 const tones = ['Emotional', 'Playful', 'Dark', 'Hopeful'] as const;
-const genres = ['Fantasy', 'Sci-Fi', 'Romance', 'Mystery'] as const;
+const genres = ['Fantasy', 'Sci-Fi', 'Romance', 'Mystery', 'Adventure', 'Journey', 'Medieval', 'Historical', 'Thriller', 'Horror'] as const;
 
 type ToneOption = (typeof tones)[number];
 type GenreOption = (typeof genres)[number];
@@ -23,7 +25,13 @@ const genreExamples: Record<GenreOption, string> = {
   Fantasy: 'An apprentice mage forging a peace treaty between dragons and humans.',
   'Sci-Fi': 'A shuttle mechanic uncovering a glitchy AI haunting the station.',
   Romance: 'Two rival bakers anonymously swapping love-soaked recipes.',
-  Mystery: 'A sleepwalking witness piecing together a crime scene from dreams.'
+  Mystery: 'A sleepwalking witness piecing together a crime scene from dreams.',
+  Adventure: 'A map arrives with a route that changes each sunrise.',
+  Journey: 'A traveler collects stories from every tavern on the road.',
+  Medieval: 'A squire hides a secret that could topple a throne.',
+  Historical: 'A forgotten telegram reshapes a town’s legacy.',
+  Thriller: 'A stranger leaves a breadcrumb trail only you can see.',
+  Horror: 'A lullaby hums from rooms that should be empty.'
 };
 
 const toneDescriptors: Record<ToneOption, string> = {
@@ -33,7 +41,7 @@ const toneDescriptors: Record<ToneOption, string> = {
   Hopeful: 'Ending with a quiet promise of brighter tomorrows.'
 };
 
-export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining, onModeChange }) => {
+export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining, onModeChange, suggestion }) => {
   const [prompt, setPrompt] = useState('');
   const [tone, setTone] = useState<ToneOption | null>(null);
   const [genre, setGenre] = useState<GenreOption | null>(null);
@@ -42,6 +50,14 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
   const theme = useTheme();
 
   const placeholder = useMemo(() => {
+    // If an external suggestion is provided and the user hasn't typed anything, show it as the placeholder
+    if (suggestion && !prompt.trim()) return suggestion;
+
+    // If the user selected a genre and hasn't typed anything, offer a genre-specific suggestion
+    if (genre && !prompt.trim()) {
+      return generateNewSuggestion(undefined, genre as string);
+    }
+
     const base = genre ? genreExamples[genre] : defaultPlaceholder;
     if (!tone) {
       return base;
@@ -49,7 +65,7 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
 
     const descriptor = toneDescriptors[tone];
     return `${base} ${descriptor}`;
-  }, [genre, tone]);
+  }, [genre, tone, suggestion, prompt]);
 
   const handleSubmit = () => {
     if (!prompt.trim()) {
@@ -66,6 +82,8 @@ export const PromptComposer: React.FC<Props> = ({ onSubmit, disabled, remaining,
     setMode(next);
     onModeChange?.(next);
   };
+
+  // Note: suggestions are shown as placeholders only — we don't auto-fill the input value.
 
   return (
     <Surface style={[styles.container, { backgroundColor: theme.colors.surface }]} elevation={2}>

@@ -4,6 +4,8 @@ import { env } from './config/env.js';
 import { authRouter } from './routes/authRoutes.js';
 import { storyRouter } from './routes/storyRoutes.js';
 import { billingRouter } from './routes/billingRoutes.js';
+import { gamificationRouter } from './routes/gamificationRoutes.js';
+import publicFeedRouter from './routes/publicFeedRoutes.js';
 import './db/index.js';
 
 const app = express();
@@ -18,6 +20,8 @@ app.get('/', (_req, res) => {
 app.use('/auth', authRouter);
 app.use('/stories', storyRouter);
 app.use('/billing', billingRouter);
+app.use('/gamification', gamificationRouter);
+app.use('/feed', publicFeedRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

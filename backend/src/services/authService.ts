@@ -5,6 +5,8 @@ import {
   getUserByEmail,
   verifyPassword
 } from '../db/repositories/userRepository.js';
+import { awardXp } from '../db/repositories/gamificationRepository.js';
+import { updateLoginStreak } from '../db/repositories/publicFeedRepository.js';
 import type { User } from '../types/user.js';
 import { env } from '../config/env.js';
 
@@ -28,6 +30,12 @@ export const authenticateUser = (payload: unknown): { user: User; token: string 
   if (!user || !verifyPassword(user, data.password)) {
     throw new Error('Invalid credentials');
   }
+
+  // Update login streak and award XP
+  const streakDays = updateLoginStreak(user.id);
+  const xpBonus = Math.min(streakDays * 5, 50); // 5 XP per streak day, max 50
+  awardXp(user.id, xpBonus);
+
   const token = jwt.sign({ sub: user.id }, env.jwtSecret, { expiresIn: '7d' });
   return { user, token };
 };

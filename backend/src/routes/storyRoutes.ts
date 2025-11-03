@@ -8,6 +8,7 @@ import {
   getSharedStory,
   getRemainingStories
 } from '../services/storyService.js';
+import { updateStoryTitle } from '../db/repositories/storyRepository.js';
 
 export const storyRouter = Router();
 
@@ -15,7 +16,7 @@ storyRouter.post(
   '/generate',
   authenticate,
   asyncHandler(async (req: AuthenticatedRequest, res) => {
-    const { prompt, genre, tone, continuedFromId } = req.body;
+    const { prompt, genre, tone, archetype, continuedFromId } = req.body;
     if (!prompt) {
       return res.status(400).json({ message: 'Prompt is required' });
     }
@@ -24,6 +25,7 @@ storyRouter.post(
       prompt,
       genre,
       tone,
+      archetype,
       continuedFromId
     });
     res.status(201).json(result);
@@ -53,6 +55,22 @@ storyRouter.get(
   '/shared/:shareId',
   asyncHandler(async (req, res) => {
     const story = getSharedStory(req.params.shareId);
+    if (!story) {
+      return res.status(404).json({ message: 'Story not found' });
+    }
+    res.json({ story });
+  })
+);
+
+storyRouter.patch(
+  '/:id/title',
+  authenticate,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { title } = req.body;
+    if (!title || typeof title !== 'string') {
+      return res.status(400).json({ message: 'Title is required and must be a string' });
+    }
+    const story = updateStoryTitle(req.params.id, title.trim());
     if (!story) {
       return res.status(404).json({ message: 'Story not found' });
     }
