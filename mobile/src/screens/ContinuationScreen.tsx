@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ScrollView, StyleSheet, View, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
-import { Button, Menu, Surface, Text, TextInput, useTheme, SegmentedButtons, IconButton } from 'react-native-paper';
+import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
+import { Button, Menu, Surface, Text, TextInput as PaperTextInput, useTheme, SegmentedButtons, IconButton } from 'react-native-paper';
 import { stripSuggestion, extractSuggestion } from '../utils/text';
 import { getGenreTheme } from '../theme/genreBackgrounds';
 import { useStoryStore } from '../store/storyStore';
@@ -35,7 +35,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
   const themeMode = useThemeStore((s) => s.mode);
   const [menuVisible, setMenuVisible] = useState(false);
   const scrollRef = useRef<ScrollView | null>(null);
-  const titleInputRef = useRef<TextInput | null>(null);
+  const titleInputRef = useRef<any>(null);
 
   useEffect(() => {
     // ensure store is up-to-date
@@ -113,18 +113,16 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
         }
       ]}
     >
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
+      <ScrollView
           ref={scrollRef}
           contentContainerStyle={styles.container}
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode="interactive"
+          scrollIndicatorInsets={{ right: 1 }}
         >
           {/* Story Title Editing - Hidden, Moved to Header */}
           {editingTitle ? (
-            <TextInput
+            <PaperTextInput
               ref={titleInputRef}
               style={styles.titleInput}
               value={titleText}
@@ -153,7 +151,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
               />
             </Surface>
           ))}
-          <TextInput
+          <PaperTextInput
             label="Next chapter direction (optional)"
             value={prompt}
             onChangeText={setPrompt}
@@ -175,7 +173,6 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
             </Button>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
     </AppScaffold>
   );
 };

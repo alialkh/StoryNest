@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Pressable } from 'react-native';
-import { Button, Card, Text, useTheme } from 'react-native-paper';
+import { Button, Card, Text, useTheme, IconButton } from 'react-native-paper';
 import type { Story } from '../types';
 import { stripSuggestion, truncateWords, formatDateLong } from '../utils/text';
 
@@ -9,11 +9,14 @@ interface Props {
   onContinue?: (story: Story) => void;
   onShare?: (story: Story) => void;
   onViewFull?: (story: Story) => void;
+  onToggleFavorite?: (story: Story, isFavorite: boolean) => Promise<void>;
+  isFavorite?: boolean;
   isLatest?: boolean;
 }
 
-export const StoryCard: React.FC<Props> = ({ story, onContinue, onShare, onViewFull, isLatest }) => {
+export const StoryCard: React.FC<Props> = ({ story, onContinue, onShare, onViewFull, onToggleFavorite, isFavorite = false, isLatest }) => {
   const theme = useTheme();
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   // Standardized card colors (remove per-conversation themed colors)
   const accent = {
@@ -24,6 +27,17 @@ export const StoryCard: React.FC<Props> = ({ story, onContinue, onShare, onViewF
 
   const displayed = truncateWords(stripSuggestion(story.content || ''), 50);
   const formattedDate = formatDateLong(story.created_at ?? null);
+
+  const handleToggleFavorite = async () => {
+    if (onToggleFavorite) {
+      setFavoriteLoading(true);
+      try {
+        await onToggleFavorite(story, isFavorite);
+      } finally {
+        setFavoriteLoading(false);
+      }
+    }
+  };
 
   return (
     <Card
@@ -67,6 +81,15 @@ export const StoryCard: React.FC<Props> = ({ story, onContinue, onShare, onViewF
           <Button mode="text" onPress={() => onShare(story)} icon="share-variant">
             Share
           </Button>
+        ) : null}
+        {onToggleFavorite ? (
+          <IconButton
+            icon={isFavorite ? 'heart' : 'heart-outline'}
+            iconColor={isFavorite ? theme.colors.error : theme.colors.onSurfaceVariant}
+            size={20}
+            onPress={handleToggleFavorite}
+            disabled={favoriteLoading}
+          />
         ) : null}
       </Card.Actions>
     </Card>

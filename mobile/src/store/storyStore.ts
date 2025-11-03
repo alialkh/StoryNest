@@ -4,17 +4,22 @@ import type { Story } from '../types';
 
 interface StoryState {
   stories: Story[];
+  favorites: Story[];
   loading: boolean;
   error: string | null;
   remaining: number | null;
   fetchStories: () => Promise<void>;
+  fetchFavorites: () => Promise<void>;
   generateStory: (payload: { prompt: string; genre?: string | null; tone?: string | null; archetype?: string | null; continuedFromId?: string | null }) => Promise<Story | null>;
   shareStory: (id: string) => Promise<{ shareUrl: string } | null>;
   updateStoryTitle: (id: string, title: string) => Promise<Story | null>;
+  toggleFavorite: (id: string, isFavorite: boolean) => Promise<boolean>;
+  checkFavoriteStatus: (id: string) => Promise<boolean>;
 }
 
 export const useStoryStore = create<StoryState>((set, get) => ({
   stories: [],
+  favorites: [],
   loading: false,
   error: null,
   remaining: null,
@@ -26,6 +31,15 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     } catch (error) {
       console.error(error);
       set({ error: 'Unable to load stories', loading: false });
+    }
+  },
+  fetchFavorites: async () => {
+    try {
+      const response = await api.get('/stories/favorites/list');
+      set({ favorites: response.data.stories });
+    } catch (error) {
+      console.error(error);
+      set({ error: 'Unable to load favorites' });
     }
   },
   generateStory: async ({ prompt, genre, tone, archetype, continuedFromId }) => {
@@ -82,6 +96,41 @@ export const useStoryStore = create<StoryState>((set, get) => ({
       console.error(error);
       set({ error: 'Unable to update story title' });
       return null;
+    }
+  },
+  toggleFavorite: async (id: string, isFavorite: boolean) => {
+    try {
+      if (isFavorite) {
+        // Remove from favorites
+        await api.delete(`/stories/${id}/favorite`);
+        set({
+          favorites: get().favorites.filter(s => s.id !== id)
+        });
+      } else {
+        // Add to favorites
+        await api.post(`/stories/${id}/favorite`);
+        // Find the story in the all stories list and add to favorites
+        const story = get().stories.find(s => s.id === id);
+        if (story) {
+          set({
+            favorites: [story, ...get().favorites]
+          });
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error(error);
+      set({ error: 'Unable to toggle favorite' });
+      return false;
+    }
+  },
+  checkFavoriteStatus: async (id: string) => {
+    try {
+      const response = await api.get(`/stories/${id}/favorite/status`);
+      return response.data.isFavorite;
+    } catch (error) {
+      console.error(error);
+      return false;
     }
   }
 }));

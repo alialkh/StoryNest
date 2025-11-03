@@ -156,4 +156,14 @@ CREATE TABLE IF NOT EXISTS login_streaks (
   last_login TEXT,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS story_favorites (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  story_id TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(user_id, story_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE
+);
 `);

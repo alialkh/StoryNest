@@ -9,6 +9,7 @@ import {
   getRemainingStories
 } from '../services/storyService.js';
 import { updateStoryTitle, getStoryById } from '../db/repositories/storyRepository.js';
+import { addFavorite, removeFavorite, isFavorite, getFavoritesForUser } from '../db/repositories/favoritesRepository.js';
 
 export const storyRouter = Router();
 
@@ -86,5 +87,47 @@ storyRouter.patch(
       return res.status(404).json({ message: 'Story not found' });
     }
     res.json({ story });
+  })
+);
+
+storyRouter.post(
+  '/:id/favorite',
+  authenticate,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const success = addFavorite(req.user!.id, req.params.id);
+    if (!success) {
+      return res.status(400).json({ message: 'Story is already favorited' });
+    }
+    res.status(201).json({ success: true });
+  })
+);
+
+storyRouter.delete(
+  '/:id/favorite',
+  authenticate,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const success = removeFavorite(req.user!.id, req.params.id);
+    if (!success) {
+      return res.status(404).json({ message: 'Story is not favorited' });
+    }
+    res.json({ success: true });
+  })
+);
+
+storyRouter.get(
+  '/:id/favorite/status',
+  authenticate,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const favorite = isFavorite(req.user!.id, req.params.id);
+    res.json({ isFavorite: favorite });
+  })
+);
+
+storyRouter.get(
+  '/favorites/list',
+  authenticate,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const stories = getFavoritesForUser(req.user!.id);
+    res.json({ stories });
   })
 );

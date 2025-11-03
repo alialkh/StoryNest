@@ -63,7 +63,7 @@ export const AppScaffold: React.FC<Props> = ({ children, title, subtitle, onBack
 
   const actions = sidebarActions ?? [];
 
-  const keyboardVerticalOffset = Platform.OS === 'ios' ? insets.top + 32 : 0;
+  const keyboardVerticalOffset = Platform.OS === 'ios' ? insets.top + 60 : 16;
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';

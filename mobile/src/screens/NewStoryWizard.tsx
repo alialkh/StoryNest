@@ -341,15 +341,17 @@ const styles = StyleSheet.create({
   },
   toneContainer: {
     paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingVertical: 16,
     gap: 20,
-    flexGrow: 1
+    flexGrow: 1,
+    paddingBottom: 40
   },
   archetypeContainer: {
     paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingVertical: 16,
     gap: 20,
-    flexGrow: 1
+    flexGrow: 1,
+    paddingBottom: 40
   },
   genreBadge: {
     paddingVertical: 16,
@@ -380,9 +382,10 @@ const styles = StyleSheet.create({
   },
   promptContainer: {
     paddingHorizontal: 24,
-    paddingVertical: 24,
+    paddingVertical: 16,
     gap: 16,
-    flexGrow: 1
+    flexGrow: 1,
+    paddingBottom: 40
   },
   promptInput: {
     backgroundColor: 'transparent'

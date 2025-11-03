@@ -38,7 +38,11 @@ export const AuthScreen: React.FC = () => {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
         >
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent}
+            keyboardDismissMode="interactive"
+            scrollIndicatorInsets={{ right: 1 }}
+          >
             <View style={styles.container}>
           <Surface style={[styles.card, { backgroundColor: theme.colors.surface }]} elevation={3}>
             <Text variant="displaySmall" style={[styles.title, { color: theme.colors.onSurface }]}> 
@@ -104,7 +108,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: 24,
-    paddingBottom: 48
+    paddingBottom: 60
   },
   container: {
     flex: 1,

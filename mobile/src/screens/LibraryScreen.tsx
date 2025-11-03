@@ -1,6 +1,6 @@
-import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
-import { Button, Surface, Text, useTheme } from 'react-native-paper';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Surface, Text, useTheme, Chip } from 'react-native-paper';
 import { StoryCard } from '../components/StoryCard';
 import { useStoryStore } from '../store/storyStore';
 import type { Story } from '../types';
@@ -10,13 +10,51 @@ import { useAuthStore } from '../store/authStore';
 interface Props {
   onBack: () => void;
   onContinueStory: (story: Story) => void;
+  onViewStory: (story: Story) => void;
 }
 
-export const LibraryScreen: React.FC<Props> = ({ onBack, onContinueStory }) => {
+export const LibraryScreen: React.FC<Props> = ({ onBack, onContinueStory, onViewStory }) => {
   const stories = useStoryStore((state) => state.stories);
+  const favorites = useStoryStore((state) => state.favorites);
   const shareStory = useStoryStore((state) => state.shareStory);
+  const toggleFavorite = useStoryStore((state) => state.toggleFavorite);
+  const fetchFavorites = useStoryStore((state) => state.fetchFavorites);
   const logout = useAuthStore((state) => state.logout);
   const theme = useTheme();
+  const [filterMode, setFilterMode] = useState<'all' | 'favorites'>('all');
+  const [favoriteStoryIds, setFavoriteStoryIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    void fetchFavorites();
+  }, [fetchFavorites]);
+
+  useEffect(() => {
+    setFavoriteStoryIds(new Set(favorites.map(s => s.id)));
+  }, [favorites]);
+
+  const displayedStories = useMemo(() => {
+    if (filterMode === 'favorites') {
+      return favorites;
+    }
+    return stories;
+  }, [filterMode, stories, favorites]);
+
+  const isFavorite = (storyId: string) => favoriteStoryIds.has(storyId);
+
+  const handleToggleFavorite = async (story: Story, currentFavorite: boolean) => {
+    const success = await toggleFavorite(story.id, currentFavorite);
+    if (success) {
+      setFavoriteStoryIds(prev => {
+        const newSet = new Set(prev);
+        if (currentFavorite) {
+          newSet.delete(story.id);
+        } else {
+          newSet.add(story.id);
+        }
+        return newSet;
+      });
+    }
+  };
 
   const sidebarActions: SidebarAction[] = [
     {
@@ -49,17 +87,41 @@ export const LibraryScreen: React.FC<Props> = ({ onBack, onContinueStory }) => {
             Back to home
           </Button>
         </Surface>
-        {stories.length === 0 ? (
+
+        {/* Filter tabs */}
+        <View style={styles.filterContainer}>
+          <Chip
+            selected={filterMode === 'all'}
+            onPress={() => setFilterMode('all')}
+            mode={filterMode === 'all' ? 'flat' : 'outlined'}
+            style={styles.filterChip}
+          >
+            All Stories ({stories.length})
+          </Chip>
+          <Chip
+            selected={filterMode === 'favorites'}
+            onPress={() => setFilterMode('favorites')}
+            mode={filterMode === 'favorites' ? 'flat' : 'outlined'}
+            style={styles.filterChip}
+          >
+            Favorites ({favorites.length})
+          </Chip>
+        </View>
+
+        {displayedStories.length === 0 ? (
           <Text variant="bodyMedium" style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>
-            No saved stories yet — generate one to get started.
+            {filterMode === 'favorites' ? 'No favorited stories yet — heart your favorite tales to see them here.' : 'No saved stories yet — generate one to get started.'}
           </Text>
         ) : null}
-        {stories.map((story) => (
+        {displayedStories.map((story) => (
           <StoryCard
             key={story.id}
             story={story}
             onContinue={onContinueStory}
+            onViewFull={onViewStory}
             onShare={() => void shareStory(story.id)}
+            onToggleFavorite={handleToggleFavorite}
+            isFavorite={isFavorite(story.id)}
           />
         ))}
       </ScrollView>
@@ -80,6 +142,14 @@ const styles = StyleSheet.create({
   },
   bannerButton: {
     alignSelf: 'flex-start'
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 4
+  },
+  filterChip: {
+    flex: 1
   },
   empty: {
     textAlign: 'center',

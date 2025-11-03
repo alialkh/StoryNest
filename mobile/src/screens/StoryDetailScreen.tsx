@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, ListRenderItemInfo, ScrollView, Share, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, FlatList, ListRenderItemInfo, ScrollView, Share, Alert } from 'react-native';
 import { Text, Card, Button, useTheme, ActivityIndicator, TextInput, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppScaffold, type SidebarAction, type HeaderAction } from '../components/AppScaffold';
@@ -206,11 +206,12 @@ export const StoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <AppScaffold title="Community Story" onBack={() => navigation.goBack()} headerActions={headerActions}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.content}
+        keyboardDismissMode="interactive"
+        scrollIndicatorInsets={{ right: 1 }}
       >
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Story Content */}
         <Card style={styles.storyCard}>
           <Card.Content>
@@ -297,7 +298,6 @@ export const StoryDetailScreen: React.FC<Props> = ({ navigation, route }) => {
           </View>
         )}
         </ScrollView>
-      </KeyboardAvoidingView>
       <PremiumFeaturePopup
         visible={premiumPopupVisible}
         featureName={premiumPopupFeature}
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 32
+    paddingBottom: 40
   },
   storyCard: {
     marginBottom: 16

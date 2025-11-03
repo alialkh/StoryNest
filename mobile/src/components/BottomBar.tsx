@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Pressable } from 'react-native';
 import { Surface, useTheme, Text } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,30 +37,30 @@ export const BottomBar: React.FC = () => {
       elevation={3}
     >
       <View style={styles.row}>
-        <View style={styles.item}>
-          <View style={[styles.iconPill, { backgroundColor: theme.colors.primaryContainer }]} onTouchEnd={onHome}> 
+        <Pressable onPress={onHome} style={styles.item}>
+          <View style={[styles.iconPill, { backgroundColor: theme.colors.primaryContainer }]}> 
             <MaterialCommunityIcons name="home-variant" size={22} color={theme.colors.onPrimaryContainer} accessibilityLabel="Home" />
           </View>
-          <Text onPress={onHome} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Home">Home</Text>
-        </View>
-        <View style={styles.item}>
-          <View style={[styles.iconPill, { backgroundColor: theme.colors.secondaryContainer }]} onTouchEnd={onNewChat}> 
+          <Text style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Home">Home</Text>
+        </Pressable>
+        <Pressable onPress={onNewChat} style={styles.item}>
+          <View style={[styles.iconPill, { backgroundColor: theme.colors.secondaryContainer }]}> 
             <MaterialCommunityIcons name="auto-fix" size={22} color={theme.colors.onSecondaryContainer} accessibilityLabel="Start a new chat" />
           </View>
-          <Text onPress={onNewChat} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Start a new chat">New</Text>
-        </View>
-        <View style={styles.item}>
-          <View style={[styles.iconPill, { backgroundColor: theme.colors.tertiaryContainer }]} onTouchEnd={onLibrary}> 
+          <Text style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Start a new chat">New</Text>
+        </Pressable>
+        <Pressable onPress={onLibrary} style={styles.item}>
+          <View style={[styles.iconPill, { backgroundColor: theme.colors.tertiaryContainer }]}> 
             <MaterialCommunityIcons name="bookshelf" size={22} color={theme.colors.onTertiaryContainer} accessibilityLabel="Chat library" />
           </View>
-          <Text onPress={onLibrary} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Chat library">Library</Text>
-        </View>
-        <View style={styles.item}>
-          <View style={[styles.iconPill, { backgroundColor: theme.colors.primary }]} onTouchEnd={onAccount}>
+          <Text style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="Chat library">Library</Text>
+        </Pressable>
+        <Pressable onPress={onAccount} style={styles.item}>
+          <View style={[styles.iconPill, { backgroundColor: theme.colors.primary }]}>
             <MaterialCommunityIcons name="account-circle" size={22} color={theme.colors.onPrimary} accessibilityLabel="My account" />
           </View>
-          <Text onPress={onAccount} style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="My account">Account</Text>
-        </View>
+          <Text style={[styles.label, { color: theme.colors.onSurface }]} accessibilityLabel="My account">Account</Text>
+        </Pressable>
       </View>
     </Surface>
   );
