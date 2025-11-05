@@ -122,7 +122,8 @@ export const AppNavigator: React.FC = () => {
                         navigation.navigate('Continue', { story });
                       }}
                       onViewStory={(story) => {
-                        navigation.navigate('StoryDetail', { storyId: story.id, story });
+                        setContinuationStory(story);
+                        navigation.navigate('Continue', { story });
                       }}
                     />
                   )}

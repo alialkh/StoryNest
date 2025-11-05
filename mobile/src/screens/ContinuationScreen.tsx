@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, View, Pressable, FlatList } from 'react-native';
 import { Button, Menu, Surface, Text, TextInput as PaperTextInput, useTheme, SegmentedButtons, IconButton } from 'react-native-paper';
 import { stripSuggestion, extractSuggestion } from '../utils/text';
 import { getGenreTheme } from '../theme/genreBackgrounds';
@@ -28,6 +28,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
   const [message, setMessage] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleText, setTitleText] = useState(story?.title || '');
+  const [wordCount, setWordCount] = useState(200);
 
   // start with an empty thread; rebuild from store on mount / when stories change
   const [parts, setParts] = useState<Story[]>([]);
@@ -36,6 +37,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const scrollRef = useRef<ScrollView | null>(null);
   const titleInputRef = useRef<any>(null);
+  const wordCountScrollRef = useRef<FlatList<number> | null>(null);
 
   useEffect(() => {
     // ensure store is up-to-date
@@ -76,7 +78,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
 
   const handleContinue = () => {
     setLoading(true);
-    void generateStory({ prompt: prompt || 'Continue the story', continuedFromId: story.id }).then((created) => {
+    void generateStory({ prompt: prompt || 'Continue the story', wordCount, continuedFromId: story.id }).then((created) => {
       setLoading(false);
       if (created) {
         setMessage('Continuation generated!');
@@ -151,6 +153,43 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
               />
             </Surface>
           ))}
+          {/* Word Count Selector */}
+          <View style={styles.wordCountContainer}>
+            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginHorizontal: 16 }}>
+              Response length: <Text style={{ fontWeight: '600', color: theme.colors.primary }}>{wordCount} words</Text>
+            </Text>
+            <FlatList
+              ref={wordCountScrollRef}
+              horizontal
+              data={[100, 200, 300, 400]}
+              keyExtractor={(item) => item.toString()}
+              scrollEventThrottle={16}
+              contentContainerStyle={styles.wordCountScroll}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => setWordCount(item)}
+                  style={[
+                    styles.wordCountButton,
+                    {
+                      backgroundColor: wordCount === item ? theme.colors.primary : theme.colors.surfaceVariant,
+                      borderColor: wordCount === item ? theme.colors.primary : theme.colors.outlineVariant
+                    }
+                  ]}
+                >
+                  <Text
+                    variant="labelMedium"
+                    style={{
+                      color: wordCount === item ? theme.colors.onPrimary : theme.colors.onSurfaceVariant,
+                      fontWeight: wordCount === item ? '600' : '500'
+                    }}
+                  >
+                    {item}
+                  </Text>
+                </Pressable>
+              )}
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
           <PaperTextInput
             label="Next chapter direction (optional)"
             value={prompt}
@@ -158,8 +197,7 @@ export const ContinuationScreen: React.FC<Props> = ({ story, onBack }) => {
             mode="outlined"
             multiline
             style={styles.input}
-            // show the AI suggestion as a placeholder (grayed) but don't fill the value
-            placeholder={prompt.trim() ? '' : (suggestion ?? 'Introduce a new twist with an unexpected ally')}
+            placeholder={suggestion ?? 'Introduce a new twist with an unexpected ally'}
           />
           {message ? (
             <Text style={[styles.message, { color: theme.colors.tertiary }]}>{message}</Text>
@@ -229,5 +267,22 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 12,
     gap: 8
+  },
+  wordCountContainer: {
+    gap: 8
+  },
+  wordCountScroll: {
+    paddingHorizontal: 16,
+    gap: 8,
+    paddingVertical: 4
+  },
+  wordCountButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 70
   }
 });

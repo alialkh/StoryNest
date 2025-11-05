@@ -20,6 +20,12 @@ import {
 import { getUserById, isPremiumActive } from '../db/repositories/userRepository.js';
 import type { Story } from '../types/story.js';
 
+// Remove suggestion markers from content
+const stripSuggestion = (text?: string): string => {
+  if (!text) return '';
+  return text.replace(/\*\*(.*?)\*\*/gs, '').trim();
+};
+
 const genAI = env.geminiApiKey ? new GoogleGenerativeAI(env.geminiApiKey) : null;
 
 export interface GenerateStoryInput {
@@ -28,6 +34,7 @@ export interface GenerateStoryInput {
   genre?: string | null;
   tone?: string | null;
   archetype?: string | null;
+  wordCount?: number | null;
   continuedFromId?: string | null;
 }
 
@@ -66,36 +73,46 @@ export const ensureDailyLimit = (userId: string): { remaining: number | null } =
   return { remaining };
 };
 
-const buildPrompt = (prompt: string, genre?: string | null, tone?: string | null, archetype?: string | null, continuedStory?: Story | null) => {
-  const userLine = continuedStory
-    ? `Continue the following story in no more than 400 words, maintaining coherence and offering a twist or emotional closing.
+const buildPrompt = (prompt: string, genre?: string | null, tone?: string | null, archetype?: string | null, wordCount?: number | null, continuedStory?: Story | null) => {
+  const isFollowUp = !!continuedStory;
+  
+  const userLine = isFollowUp
+    ? `Continue the following story in no more than ${wordCount ?? 400} words, maintaining coherence and offering a twist or emotional closing.
 
 Story so far:
-${continuedStory.content}
+${stripSuggestion(continuedStory!.content)}
 
 Prompt for the next chapter: ${prompt}`
-    : `Write a short story (minimum 200 words, maximum 400 words) about ${prompt}.`;
+    : `Write a short story (minimum ${Math.round((wordCount ?? 200) * 0.5)} words, maximum ${wordCount ?? 400} words) about ${prompt}.`;
 
   const qualifiers = [
     genre ? `Genre: ${genre}` : null,
     tone ? `Tone: ${tone}` : null,
-    archetype ? `Main Character Archetype: ${archetype}` : null
+    archetype ? `Main Character Archetype: ${archetype}` : null,
+    wordCount ? `Target word count: ${wordCount} words` : null
   ]
     .filter(Boolean)
     .join('\n');
 
   return {
-    system: `You are an award-winning creative writer who crafts short, vivid 200-400 word stories that end with a twist or emotional conclusion.
+    system: `You are an award-winning creative writer who crafts short, vivid 100-400 word stories that end with a twist or emotional conclusion.
     Your task is to generate a short story from a prompt that you are provided with.
     You operate within a system where a user will provide you with a prompt, genre, tone, and character archetype, and you will produce a short story, or build from a previous story.
     
     CRITICAL OUTPUT FORMAT:
-    1. Begin with a story title surrounded by double asterisks on its own line: **Your Title Here**
+    ${isFollowUp 
+      ? `1. Do NOT generate a new title. The original story title is already set and should not change.
+    2. Write only the story content with proper formatting:
+       - Use backticks around text for BOLD emphasis: \`bold text\`
+       - Use underscores around text for ITALIC emphasis: _italic text_
+    3. After the story ends, add a single line break, then on a new line write a compelling one-sentence idea for what could happen next. Wrap this idea in double asterisks, for example: **The next challenge awaits.**
+    4. Do not include any other text outside this format. Do not include a title.`
+      : `1. Begin with a story title surrounded by double asterisks on its own line: **Your Title Here**
     2. Write the story content with proper formatting:
        - Use backticks around text for BOLD emphasis: \`bold text\`
        - Use underscores around text for ITALIC emphasis: _italic text_
-    3. At the very end, include a single sentence suggesting continuation, surrounded by double asterisks: **Suggestion for next chapter.**
-    4. Do not include any other text outside this format.
+    3. After the story ends, add a single line break, then on a new line write a compelling one-sentence idea for what could happen next. Wrap this idea in double asterisks, for example: **The mystery deepens.**
+    4. Do not include any other text outside this format.`}
     
     STORY GUIDELINES:
     - Your short story should reflect the prompt, genre, tone, and character archetype that is requested.
@@ -111,8 +128,8 @@ Prompt for the next chapter: ${prompt}`
   };
 };
 
-const callAI = async (prompt: string, genre?: string | null, tone?: string | null, archetype?: string | null, continuedStory?: Story | null): Promise<string> => {
-  const instructions = buildPrompt(prompt, genre, tone, archetype, continuedStory);
+const callAI = async (prompt: string, genre?: string | null, tone?: string | null, archetype?: string | null, wordCount?: number | null, continuedStory?: Story | null): Promise<string> => {
+  const instructions = buildPrompt(prompt, genre, tone, archetype, wordCount, continuedStory);
   if (!genAI) {
     return fallbackStory(prompt);
   }
@@ -161,25 +178,41 @@ export const generateStory = async ({
   genre = null,
   tone = null,
   archetype = null,
+  wordCount = null,
   continuedFromId = null
 }: GenerateStoryInput): Promise<GenerateStoryResult> => {
   const { remaining } = ensureDailyLimit(userId);
   const continuedStory = continuedFromId ? getStoryById(continuedFromId) : null;
-  const rawContent = await callAI(prompt, genre, tone, archetype, continuedStory ?? undefined);
+  const rawContent = await callAI(prompt, genre, tone, archetype, wordCount, continuedStory ?? undefined);
   
-  // Extract title from content: **Title** followed by story content
+  console.debug('[Story] Raw LLM response (first 200 chars):', rawContent.substring(0, 200));
+  console.debug('[Story] Raw LLM response (last 200 chars):', rawContent.substring(Math.max(0, rawContent.length - 200)));
+  
   let title: string | null = null;
   let content = rawContent;
-  // Match title with optional whitespace, newlines, etc.
-  const titleMatch = rawContent.match(/^\s*\*\*([^*]+)\*\*/);
-  if (titleMatch && titleMatch[1]) {
-    title = titleMatch[1].trim();
-    console.info('[Title] Extracted title:', title);
-    // Remove the title from content so only story remains
-    content = rawContent.replace(/^\s*\*\*[^*]+\*\*\s*/, '').trim();
+  
+  if (!continuedStory) {
+    // For initial stories: extract title from LLM response
+    // Match title with optional whitespace, newlines, etc.
+    const titleMatch = rawContent.match(/^\s*\*\*([^*]+)\*\*/);
+    if (titleMatch && titleMatch[1]) {
+      title = titleMatch[1].trim();
+      console.info('[Title] Extracted title (initial story):', title);
+      // Remove the title from content so only story remains
+      content = rawContent.replace(/^\s*\*\*[^*]+\*\*\s*/, '').trim();
+      console.debug('[Content] After title removal (first 150 chars):', content.substring(0, 150));
+      console.debug('[Content] After title removal (last 150 chars):', content.substring(Math.max(0, content.length - 150)));
+    } else {
+      console.warn('[Title] No title match found in response for initial story');
+      console.debug('[Title] Response start:', rawContent.substring(0, 200));
+    }
   } else {
-    console.warn('[Title] No title match found in response');
-    console.debug('[Title] Response start:', rawContent.substring(0, 100));
+    // For follow-up stories: keep original title, don't extract new one
+    // The LLM should NOT have included a title (per instructions)
+    title = continuedStory.title;
+    content = rawContent.trim();
+    console.info('[Title] Using original title for follow-up:', title);
+    console.debug('[Content] Follow-up story content (last 150 chars):', content.substring(Math.max(0, content.length - 150)));
   }
   
   const story = createStory({

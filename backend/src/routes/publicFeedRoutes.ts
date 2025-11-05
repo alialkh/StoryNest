@@ -5,6 +5,7 @@ import * as publicFeedRepository from '../db/repositories/publicFeedRepository.j
 import { getStoryById } from '../db/repositories/storyRepository.js';
 import { getUserById } from '../db/repositories/userRepository.js';
 import { awardXp, getUserStats } from '../db/repositories/gamificationRepository.js';
+import { notifyStoryLike } from '../services/notificationService.js';
 
 const router = Router();
 
@@ -16,6 +17,20 @@ router.get(
     const offset = parseInt(req.query?.offset as string) || 0;
 
     const stories = publicFeedRepository.getPublicFeed(limit, offset);
+    res.json(stories);
+  })
+);
+
+// Get following feed (stories from users you follow - auth required)
+router.get(
+  '/feed/following',
+  authenticate,
+  asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const limit = Math.min(parseInt(req.query?.limit as string) || 20, 100);
+    const offset = parseInt(req.query?.offset as string) || 0;
+    const userId = req.user!.id;
+
+    const stories = publicFeedRepository.getFollowingFeed(userId, limit, offset);
     res.json(stories);
   })
 );
@@ -84,8 +99,33 @@ router.post(
     const { publicStoryId } = req.params;
     const userId = req.user!.id;
 
+    // Get public story details for notification
+    const stmt = publicFeedRepository.db?.prepare?.(`
+      SELECT ps.user_id, ps.title FROM public_stories ps
+      WHERE ps.id = ?
+    `) || null;
+
     const success = publicFeedRepository.likeStory(publicStoryId, userId);
     if (success) {
+      // Get story owner and title for notification
+      try {
+        // Query directly using db from publicFeedRepository
+        const getOwnerStmt = publicFeedRepository.db?.prepare?.(`
+          SELECT ps.user_id, ps.title FROM public_stories ps
+          WHERE ps.id = ?
+        `);
+        
+        if (getOwnerStmt) {
+          const storyInfo = getOwnerStmt.get(publicStoryId) as any;
+          if (storyInfo) {
+            // Send notification to story owner
+            notifyStoryLike(publicStoryId, storyInfo.user_id, userId, storyInfo.title);
+          }
+        }
+      } catch (error) {
+        // Notification error shouldn't fail the like request
+        console.error('Notification error:', error);
+      }
       res.json({ liked: true });
     } else {
       // Already liked, so unlike instead

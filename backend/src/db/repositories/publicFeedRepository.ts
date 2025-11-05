@@ -142,6 +142,17 @@ export const getPublicFeed = (limit: number = 20, offset: number = 0): PublicSto
 // Like a public story
 export const likeStory = (publicStoryId: string, userId: string): boolean => {
   try {
+    // Get story owner first (before inserting like)
+    const getOwnerStmt = db.prepare(`
+      SELECT ps.user_id, ps.title FROM public_stories ps
+      WHERE ps.id = ?
+    `);
+    const storyInfo = getOwnerStmt.get(publicStoryId) as any;
+    
+    if (!storyInfo) {
+      return false;
+    }
+
     const id = randomUUID();
     const insertStmt = db.prepare(`
       INSERT INTO public_story_likes (id, public_story_id, user_id)
@@ -154,6 +165,10 @@ export const likeStory = (publicStoryId: string, userId: string): boolean => {
       UPDATE public_stories SET like_count = like_count + 1 WHERE id = ?
     `);
     updateStmt.run(publicStoryId);
+
+    // Trigger notification to story owner (imported from notificationService)
+    // This is done asynchronously in the route handler to avoid circular dependency
+    // See publicFeedRoutes.ts for the actual notification call
 
     return true;
   } catch (err) {
@@ -299,4 +314,41 @@ export const updateLoginStreak = (userId: string): number => {
   `);
   updateStmt.run(today, userId);
   return 1;
+};
+
+/**
+ * Get public feed containing only stories from users that the given user follows
+ * This ensures users only see shared stories from people they explicitly follow
+ * 
+ * @param userId - The user whose follows will be used to filter stories
+ * @param limit - Maximum number of stories to return
+ * @param offset - Pagination offset
+ * @returns PublicStory[] - Stories shared by users that userId is following
+ */
+export const getFollowingFeed = (
+  userId: string,
+  limit: number = 20,
+  offset: number = 0
+): PublicStory[] => {
+  const stmt = db.prepare(`
+    SELECT 
+      ps.id,
+      ps.story_id,
+      ps.user_id,
+      ps.title,
+      ps.excerpt,
+      s.content as text,
+      ps.like_count,
+      ps.comment_count,
+      ps.shared_at
+    FROM public_stories ps
+    LEFT JOIN stories s ON ps.story_id = s.id
+    WHERE ps.user_id IN (
+      SELECT following_id FROM user_follows
+      WHERE follower_id = ?
+    )
+    ORDER BY ps.shared_at DESC
+    LIMIT ? OFFSET ?
+  `);
+  return stmt.all(userId, limit, offset) as PublicStory[];
 };

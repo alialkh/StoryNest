@@ -4,6 +4,19 @@ import { Button, Card, Text, useTheme, IconButton } from 'react-native-paper';
 import type { Story } from '../types';
 import { stripSuggestion, truncateWords, formatDateLong } from '../utils/text';
 
+/**
+ * Props for StoryCard component
+ * 
+ * @interface Props
+ * @property {Story} story - The story object to display
+ * @property {(story: Story) => void} [onContinue] - Optional: Callback for "Continue" button press
+ * @property {(story: Story) => void} [onShare] - Optional: Callback for "Share" button press
+ * @property {(story: Story) => void} [onViewFull] - Optional: Callback for clicking story title/body
+ * @property {(story: Story, isFavorite: boolean) => Promise<void>} [onToggleFavorite] - Optional: Callback for heart icon press
+ *                                                      isFavorite param is CURRENT state before toggle
+ * @property {boolean} [isFavorite] - Optional: Whether story is currently favorited (default: false)
+ * @property {boolean} [isLatest] - Optional: Whether this is the latest/most recent story (shows primary border)
+ */
 interface Props {
   story: Story;
   onContinue?: (story: Story) => void;
@@ -14,6 +27,26 @@ interface Props {
   isLatest?: boolean;
 }
 
+/**
+ * StoryCard - Reusable card component for displaying story summaries
+ * 
+ * Used in:
+ * - HomeScreen (with continue, share, view callbacks)
+ * - LibraryScreen (with continue, share, view, favorite callbacks)
+ * - PublicFeedScreen (read-only card)
+ * 
+ * Features:
+ * - Displays story title/genre, truncated content preview (50 words)
+ * - Shows creation date and "continuation" label if applicable
+ * - Optional "Continue" button for editing/continuing story
+ * - Optional "Share" button for sharing to community
+ * - Optional heart icon for favoriting (shows filled when isFavorite=true)
+ * - Clickable title/body area that triggers onViewFull callback
+ * - Highlights latest story with primary border color
+ * 
+ * Important: onToggleFavorite receives the CURRENT favorite state, not the new state
+ * This allows the parent to handle the state transition logic
+ */
 export const StoryCard: React.FC<Props> = ({ story, onContinue, onShare, onViewFull, onToggleFavorite, isFavorite = false, isLatest }) => {
   const theme = useTheme();
   const [favoriteLoading, setFavoriteLoading] = useState(false);
